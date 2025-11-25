@@ -49,7 +49,7 @@
         }
         .match-row:hover { background: #f9f9f9; }
         
-        .match-info { width: 45%; }
+        .match-info { width: 40%; }
         .match-id { font-size: 0.85em; color: #888; margin-right: 10px; font-family: monospace; }
         
         /* TBD 锁定样式 */
@@ -151,14 +151,27 @@
         </div>
 
         <div class="section-box">
-            <h3 class="section-title">🎮 比赛结果录入 (Matches)</h3>
+            <h3 class="section-title">🎮 比赛管理 (Matches)</h3>
             <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">
-                * 队伍为 TBD 的比赛将自动锁定，不可录入。<br>
-                * 录入结果后，系统会自动处理：判分、隐藏成就结算、下一轮晋级。
+                * TBD = 队伍待定 (自动锁定)。<br>
+                * 点击 🔒/🔓 按钮可手动暂停某场比赛的预测。<br>
+                * 录入结果后将自动晋级胜者。
             </p>
             <div id="admin-matches">
                 <div class="loading">加载中...</div>
             </div>
+        </div>
+
+        <div class="section-box" style="border-color:red; background:#fff5f5; margin-top:40px;">
+            <h3 class="section-title" style="color:red; border-bottom-color:red;">☢️ 危险区域 (Danger Zone)</h3>
+            <p style="color:#c00; font-size:0.9rem;">
+                <b>工厂重置 (Factory Reset):</b><br>
+                这将删除所有玩家账号、预测记录、日志，并将赛程重置为初始状态。<br>
+                此操作不可逆！
+            </p>
+            <button onclick="factoryReset()" style="background:red; color:white; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:5px; width:100%;">
+                💣 删除所有数据并重置系统
+            </button>
         </div>
     </div>
 
@@ -193,10 +206,8 @@
 
     <script>
         const API = '/api/admin';
-        // 简易鉴权头，实际项目请妥善处理
         const headers = { 'Content-Type': 'application/json', 'adminSecret': '123456' };
         
-        // 成就列表常量 (用于下拉菜单)
         const ALL_ACHIEVEMENTS = [
             "闪电念", "老开爱炸墙", "reverse sweep", "吃土豆", "再冲一次", 
             "最中幻想", "landon见面交铃铛tp", "冯哥见面三段闪", "闹麻了", 
@@ -216,8 +227,8 @@
 
             matches.forEach(m => {
                 const isFin = m.status === 'finished';
+                const isLocked = m.isExplicitlyLocked; // 获取手动锁定状态
                 
-                // 处理 TBD 逻辑
                 const tbdA = m.teamA.name === 'TBD';
                 const tbdB = m.teamB.name === 'TBD';
                 const isTBD = tbdA || tbdB;
@@ -226,13 +237,12 @@
                 const teamB = tbdB ? m.teamB.displayName : m.teamB.name;
 
                 // TBD 状态下，输入框和按钮都禁用
-                const disabledAttr = (isTBD || isFin) ? 'disabled' : '';
                 const rowClass = isTBD ? 'match-row tbd' : 'match-row';
                 
                 let controlHtml = '';
                 
                 if (isTBD) {
-                    controlHtml = `<span style="font-size:0.8rem; color:#aaa;">🔒 等待队伍晋级</span>`;
+                    controlHtml = `<span style="font-size:0.8rem; color:#aaa;">🔒 等待晋级</span>`;
                 } else if (isFin) {
                     controlHtml = `
                         <span class="status-finished">✅ ${m.teamA.score} : ${m.teamB.score}</span>
@@ -246,10 +256,18 @@
                         <span style="margin:0 5px">:</span> 
                         <input type="number" id="sB_${m._id}" value="${m.teamB.score}" min="0" max="4">
                         <button onclick="settleMatch('${m._id}')" class="btn-primary" style="padding:4px 10px; font-size:0.8rem; margin-left:10px;">
-                            确认结果
+                            确认
                         </button>
                     `;
                 }
+
+                // [新增] 锁定按钮
+                // 只有在非TBD且非结束状态下显示
+                const lockBtn = (!isTBD && !isFin) ? `
+                    <button onclick="toggleLock('${m._id}')" style="margin-left:15px; border:1px solid #ddd; background:${isLocked ? '#ffeba7' : 'white'}; padding:5px 10px; border-radius:5px; cursor:pointer;" title="${isLocked ? '当前已锁定，点击解锁' : '当前开放，点击锁定'}">
+                        ${isLocked ? '🔒 已锁' : '🔓 开放'}
+                    </button>
+                ` : '';
 
                 container.innerHTML += `
                     <div class="${rowClass}">
@@ -258,7 +276,10 @@
                             <b>${teamA}</b> <span style="font-size:0.8em; color:#888;">vs</span> <b>${teamB}</b>
                             <span style="font-size:0.75em; color:#aaa; margin-left:5px;">(${m.format})</span>
                         </div>
-                        <div>${controlHtml}</div>
+                        <div style="display:flex; align-items:center;">
+                            ${controlHtml}
+                            ${lockBtn}
+                        </div>
                     </div>`;
             });
         }
@@ -267,7 +288,7 @@
             const sA = document.getElementById(`sA_${id}`).value;
             const sB = document.getElementById(`sB_${id}`).value;
             
-            if(!confirm(`⚠️ 确认录入结果 ${sA} : ${sB} 吗？\n\n这将触发：\n1. 所有玩家判分\n2. 隐藏成就自动结算\n3. 胜者自动晋级到下一轮`)) return;
+            if(!confirm(`⚠️ 确认录入结果 ${sA} : ${sB} 吗？\n\n这将触发：\n1. 所有玩家判分\n2. 隐藏成就自动结算\n3. 胜者自动晋级`)) return;
             
             try {
                 const res = await fetch(API + '/settle', { 
@@ -276,7 +297,7 @@
                 });
                 const data = await res.json();
                 if(data.success) {
-                    alert(data.message + (data.achievements ? `\n\n🏆 本场产生新成就:\n${data.achievements.join('\n')}` : ''));
+                    alert(data.message + (data.achievements && data.achievements.length ? `\n\n🏆 本场产生新成就:\n${data.achievements.join('\n')}` : ''));
                     loadMatches();
                 } else {
                     alert('❌ 错误: ' + data.message);
@@ -285,10 +306,43 @@
         }
 
         async function resetMatch(id) {
-            if(!confirm('⚠️ 高危操作：确定要撤销这场比赛吗？\n\n所有因此场比赛获得的积分将被扣除！\n(已发放的成就需要手动回收)')) return;
+            if(!confirm('⚠️ 高危操作：确定要撤销这场比赛吗？\n\n所有因此场比赛获得的积分将被扣除！')) return;
             const res = await fetch(API + '/reset-match', { method:'POST', headers, body:JSON.stringify({matchId:id}) });
             alert((await res.json()).message);
             loadMatches();
+        }
+
+        // [新增] 切换锁定状态
+        async function toggleLock(id) {
+            const res = await fetch(API + '/toggle-lock', { method:'POST', headers, body:JSON.stringify({matchId:id}) });
+            const data = await res.json();
+            if(data.success) {
+                loadMatches();
+            } else {
+                alert(data.message);
+            }
+        }
+
+        // [新增] 工厂重置
+        async function factoryReset() {
+            const code = prompt("⚠️ 高危操作警告！\n\n这将清空所有玩家数据并重置赛程！\n\n请输入 'DELETE' (全大写) 确认操作:");
+            if (code !== 'DELETE') {
+                if (code !== null) alert("确认码错误");
+                return;
+            }
+
+            const res = await fetch(API + '/factory-reset', { 
+                method:'POST', headers, 
+                body: JSON.stringify({ confirmation: code }) 
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("错误: " + data.message);
+            }
         }
 
         // ============================
@@ -306,7 +360,6 @@
             if (users.length === 0) { container.innerHTML = '<p style="text-align:center; color:#888">未找到相关玩家</p>'; return; }
 
             container.innerHTML = users.map(u => {
-                // 生成成就标签
                 let achHtml = u.achievements.map(a => `
                     <span class="ach-tag">
                         ${a.name}
@@ -315,7 +368,6 @@
                 `).join('');
                 if(achHtml === '') achHtml = '<span style="color:#999; font-size:0.8rem">暂无成就</span>';
 
-                // 下拉菜单选项
                 let options = ALL_ACHIEVEMENTS.map(name => `<option value="${name}">${name}</option>`).join('');
 
                 return `
@@ -355,7 +407,7 @@
                 body: JSON.stringify({ userId, action, achievementName: achName })
             });
             const data = await res.json();
-            if (data.success) searchUsers(); // 刷新列表
+            if (data.success) searchUsers(); 
             else alert(data.message);
         }
 

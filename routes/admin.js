@@ -327,5 +327,38 @@ router.post('/manage-achievement', requireAdmin, async (req, res) => {
         res.json({success:true});
     } catch(e){ res.status(500).json({message:e.message}); }
 });
+// ... (前面的代码保持不变)
+
+// ==========================================
+// 6. [新增] 切换比赛锁定状态 (Lock/Unlock)
+// ==========================================
+router.post('/toggle-lock', requireAdmin, async (req, res) => {
+    const { matchId } = req.body;
+    try {
+        const match = await Match.findById(matchId);
+        if (!match) return res.status(404).json({ message: '比赛不存在' });
+
+        // 切换状态 (true -> false, false -> true)
+        match.isExplicitlyLocked = !match.isExplicitlyLocked;
+        await match.save();
+
+        // 记录日志
+        const actionType = match.isExplicitlyLocked ? "LOCK_MATCH" : "UNLOCK_MATCH";
+        await Log.create({
+            action: `ADMIN_${actionType}`,
+            operatorId: "ADMIN",
+            operatorName: "Administrator",
+            target: `Match ${match.customId}`,
+            details: { newState: match.isExplicitlyLocked ? "LOCKED 🔒" : "OPEN 🔓" }
+        });
+
+        res.json({ 
+            success: true, 
+            message: match.isExplicitlyLocked ? '已锁定 🔒' : '已解锁 🔓', 
+            isLocked: match.isExplicitlyLocked 
+        });
+
+    } catch (e) { res.status(500).json({ message: e.message }); }
+});
 
 module.exports = router;

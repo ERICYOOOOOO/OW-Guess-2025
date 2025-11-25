@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Prediction = require('../models/Prediction');
 const Match = require('../models/Match');
-const User = require('../models/user');
+const User = require('../models/user'); // 注意 User 大小写
 const Log = require('../models/Log');
 
 const validateScore = (format, sA, sB) => {
@@ -19,38 +19,46 @@ router.post('/', async (req, res) => {
         
         const match = await Match.findById(matchId);
         if (!match) return res.status(404).json({ message: '比赛不存在' });
-        if (new Date() >= new Date(match.startTime)) return res.status(403).json({ message: '比赛已开始' });
-        if (!validateScore(match.format, parseInt(teamAScore), parseInt(teamBScore))) return res.status(400).json({ message: '比分无效' });
 
+        // 1. [新增] 检查管理员手动锁
+        if (match.isExplicitlyLocked) {
+            return res.status(403).json({ message: '该比赛已被管理员暂停预测 🔒' });
+        }
+
+        // 2. 检查时间锁
+        if (new Date() >= new Date(match.startTime)) {
+            return res.status(403).json({ message: '比赛已开始，通道已关闭' });
+        }
+
+        // 3. 检查赛制
+        if (!validateScore(match.format, parseInt(teamAScore), parseInt(teamBScore))) {
+            return res.status(400).json({ message: '比分无效' });
+        }
+
+        // 4. 检查重复
         const existingPred = await Prediction.findOne({ userId, matchId });
         if (existingPred) return res.status(400).json({ message: '不可重复预测' });
 
         const user = await User.findById(userId);
 
-        // 保存预测
         const prediction = new Prediction({
             userId, matchId, teamAScore, teamBScore,
             predictedWinner: parseInt(teamAScore) > parseInt(teamBScore) ? match.teamA.name : match.teamB.name
         });
         await prediction.save();
 
-        // === 📝 详细日志: 记录玩家具体猜了什么 ===
         if (user) {
             await Log.create({
                 action: "USER_PREDICT",
                 operatorId: user._id,
                 operatorName: user.nickname,
-                target: `Match ${match.customId}`, // e.g. Match M1
-                details: { 
-                    matchName: `${match.teamA.name} vs ${match.teamB.name}`,
-                    userGuess: `${teamAScore} : ${teamBScore}`, // 记录具体比分
-                    winnerGuess: prediction.predictedWinner     // 记录他猜谁赢
-                }
+                target: `Match ${match.customId}`,
+                details: { matchName: `${match.teamA.name} vs ${match.teamB.name}`, userGuess: `${teamAScore}:${teamBScore}` }
             });
         }
-        // =======================================
 
         res.status(201).json({ success: true, message: '预测成功' });
+
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

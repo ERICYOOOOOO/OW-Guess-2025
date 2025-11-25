@@ -18,18 +18,14 @@ const TEAM_FULL_NAMES = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. 检查登录状态
     if (!App.user) {
         document.getElementById('login-modal').style.display = 'flex';
     } else {
         document.getElementById('login-modal').style.display = 'none';
         document.getElementById('prediction-container').classList.remove('hidden');
-        
-        // [修改] 只加载一次数据，不再启动轮询
         await loadData();
     }
 
-    // 2. 绑定登录表单
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const result = await App.login(document.getElementById('nickname').value, document.getElementById('wechatId').value);
@@ -37,8 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         else document.getElementById('login-error').innerText = result.message;
     });
 });
-
-// [修改] 删除了 startPolling 函数
 
 async function loadData() {
     try {
@@ -72,21 +66,35 @@ function renderSchedule(matches, predMap) {
 }
 
 function createMatchCard(match, pred) {
+    // 1. 各种状态判断
     const isTimeLocked = new Date() >= new Date(match.startTime) || match.status !== 'upcoming';
     const isTBD = match.teamA.name === 'TBD' || match.teamB.name === 'TBD';
-    const isFullyLocked = isTimeLocked || isTBD || !!pred;
+    const isAdminLocked = match.isExplicitlyLocked;
+    const isFinished = match.status === 'finished'; // 比赛是否已结算
+
+    // 2. 全锁定：只要满足任意条件，输入框就禁用 (包括比赛已结束)
+    const isFullyLocked = isTimeLocked || isTBD || isAdminLocked || !!pred || isFinished;
 
     let statusClass = '';
     let resultText = '';
     
+    // 3. 处理结算状态 (优先级最高)
+    // 如果有预测且已判分，或者是比赛已结束(即使用户没预测也显示实际比分)
     if (pred && pred.status === 'judged') {
         if (pred.isPerfect) statusClass = 'status-perfect';
         else if (pred.pointsEarned > 0) statusClass = 'status-correct';
         else statusClass = 'status-wrong';
+        
         resultText = `<div style="text-align:center;font-size:0.8em;color:#666;margin-top:5px;">实际: ${match.teamA.score}:${match.teamB.score} (得分: ${pred.pointsEarned})</div>`;
+    } else if (isFinished) {
+        // 用户没预测，但比赛结束了，显示实际比分
+        resultText = `<div style="text-align:center;font-size:0.8em;color:#666;margin-top:5px;">实际: ${match.teamA.score}:${match.teamB.score} (未参与)</div>`;
     }
 
     if (isTBD) statusClass += ' tbd-locked';
+    
+    // [修改] 如果手动锁定，且比赛还没结束，才加变灰样式
+    if (isAdminLocked && !isFinished) statusClass += ' tbd-locked'; 
 
     const nameA = match.teamA.name === 'TBD' ? (match.teamA.displayName || 'TBD') : (TEAM_FULL_NAMES[match.teamA.name] || match.teamA.name);
     const nameB = match.teamB.name === 'TBD' ? (match.teamB.displayName || 'TBD') : (TEAM_FULL_NAMES[match.teamB.name] || match.teamB.name);
@@ -97,6 +105,16 @@ function createMatchCard(match, pred) {
 
     const logoA = match.teamA.name === 'TBD' ? 'images/teams/TBD.png' : `images/teams/${match.teamA.name}.png`;
     const logoB = match.teamB.name === 'TBD' ? 'images/teams/TBD.png' : `images/teams/${match.teamB.name}.png`;
+
+    // [修改] 提示语逻辑
+    let noticeHtml = '';
+    if (isTBD) {
+        noticeHtml = '<div class="tbd-notice">🔒 队伍待定</div>';
+    } 
+    else if (isAdminLocked && !isFinished) {
+        // 只有在“被管理员锁了”且“还没出结果”时，才显示这个红字
+        noticeHtml = '<div class="tbd-notice" style="color:#d9534f;">🔒 管理员暂停预测</div>';
+    }
 
     return `
         <div class="match-card ${statusClass}" data-id="${match._id}">
@@ -126,7 +144,7 @@ function createMatchCard(match, pred) {
                 </div>
             </div>
 
-            ${isTBD ? '<div class="tbd-notice">🔒 队伍待定，稍后开放</div>' : ''}
+            ${noticeHtml}
             ${resultText}
             ${(!isFullyLocked) ? `<button class="btn-submit-predict" onclick="submitPrediction('${match._id}')">确认预测</button>` : ''}
         </div>
@@ -177,7 +195,7 @@ window.submitPrediction = async (matchId) => {
             body: JSON.stringify({ userId: App.user._id, matchId, teamAScore: scoreA, teamBScore: scoreB })
         });
         const data = await res.json();
-        if (data.success) { alert("预测成功！"); loadData(); } // 提交成功后手动刷新一次数据
+        if (data.success) { alert("预测成功！"); loadData(); }
         else alert(data.message);
     } catch (e) { alert("网络错误"); }
 };
