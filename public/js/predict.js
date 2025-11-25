@@ -1,6 +1,6 @@
 // public/js/predict.js
 
-// === 队伍全称映射表 (根据提供的图片整理) ===
+// === 队伍全称映射表 ===
 const TEAM_FULL_NAMES = {
     "SSG": "Spacestation",
     "PEPS": "Team Peps",
@@ -14,21 +14,22 @@ const TEAM_FULL_NAMES = {
     "WBG": "Weibo Gaming",
     "TM": "Twisted Minds",
     "TL": "Team Liquid",
-    "TBD": "TBD" // 待定
+    "TBD": "TBD"
 };
 
-let pollingInterval = null;
-
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. 检查登录状态
     if (!App.user) {
         document.getElementById('login-modal').style.display = 'flex';
     } else {
         document.getElementById('login-modal').style.display = 'none';
         document.getElementById('prediction-container').classList.remove('hidden');
+        
+        // [修改] 只加载一次数据，不再启动轮询
         await loadData();
-        startPolling();
     }
 
+    // 2. 绑定登录表单
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const result = await App.login(document.getElementById('nickname').value, document.getElementById('wechatId').value);
@@ -37,16 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-function startPolling() {
-    if (pollingInterval) clearInterval(pollingInterval);
-    pollingInterval = setInterval(async () => {
-        if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-        if (document.getElementById('manual-overlay') && document.getElementById('manual-overlay').style.display !== 'none') return;
-        await loadData(true);
-    }, 5000);
-}
+// [修改] 删除了 startPolling 函数
 
-async function loadData(isSilent = false) {
+async function loadData() {
     try {
         const [matchesRes, myPredsRes] = await Promise.all([
             fetch('/api/matches'),
@@ -59,7 +53,7 @@ async function loadData(isSilent = false) {
         preds.forEach(p => predMap.set(p.matchId, p));
         
         renderSchedule(matches, predMap);
-        if(!isSilent) console.log("数据已更新");
+        console.log("数据加载完成");
     } catch (err) { console.error(err); }
 }
 
@@ -74,11 +68,7 @@ function renderSchedule(matches, predMap) {
         days[day].forEach(m => html += createMatchCard(m, predMap.get(m._id)));
     });
     
-    if (container.innerHTML.length !== html.length || !container.innerHTML.includes('match-card')) {
-        container.innerHTML = html;
-    } else {
-        container.innerHTML = html;
-    }
+    container.innerHTML = html;
 }
 
 function createMatchCard(match, pred) {
@@ -98,8 +88,6 @@ function createMatchCard(match, pred) {
 
     if (isTBD) statusClass += ' tbd-locked';
 
-    // === 1. 处理名称显示 (全称 logic) ===
-    // 如果是 TBD，优先显示 displayName (例如 "M4 Winner")，否则显示全称
     const nameA = match.teamA.name === 'TBD' ? (match.teamA.displayName || 'TBD') : (TEAM_FULL_NAMES[match.teamA.name] || match.teamA.name);
     const nameB = match.teamB.name === 'TBD' ? (match.teamB.displayName || 'TBD') : (TEAM_FULL_NAMES[match.teamB.name] || match.teamB.name);
 
@@ -107,8 +95,6 @@ function createMatchCard(match, pred) {
     const scoreB = pred ? pred.teamBScore : 0;
     const maxScore = match.format === 'FT4' ? 4 : (match.format === 'FT3' ? 3 : 2);
 
-    // === 2. 处理 Logo 路径 ===
-    // 必须确保 public/images/teams/TBD.png 存在
     const logoA = match.teamA.name === 'TBD' ? 'images/teams/TBD.png' : `images/teams/${match.teamA.name}.png`;
     const logoB = match.teamB.name === 'TBD' ? 'images/teams/TBD.png' : `images/teams/${match.teamB.name}.png`;
 
@@ -122,7 +108,7 @@ function createMatchCard(match, pred) {
                 <div class="team">
                     <div class="logo-wrapper">
                         <img src="${logoA}" class="team-logo" alt="${match.teamA.name}" onerror="this.src='images/logo_placeholder.png'">
-                        </div>
+                    </div>
                     <span>${nameA}</span>
                 </div>
                 
@@ -135,7 +121,7 @@ function createMatchCard(match, pred) {
                 <div class="team">
                     <div class="logo-wrapper">
                         <img src="${logoB}" class="team-logo" alt="${match.teamB.name}" onerror="this.src='images/logo_placeholder.png'">
-                        </div>
+                    </div>
                     <span>${nameB}</span>
                 </div>
             </div>
@@ -191,7 +177,7 @@ window.submitPrediction = async (matchId) => {
             body: JSON.stringify({ userId: App.user._id, matchId, teamAScore: scoreA, teamBScore: scoreB })
         });
         const data = await res.json();
-        if (data.success) { alert("预测成功！"); loadData(); }
+        if (data.success) { alert("预测成功！"); loadData(); } // 提交成功后手动刷新一次数据
         else alert(data.message);
     } catch (e) { alert("网络错误"); }
 };

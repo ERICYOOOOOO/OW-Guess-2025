@@ -464,3 +464,125 @@ footer {
     transform: scale(1.02);
     z-index: 10;
 }
+
+/* =========================================
+   📱 移动端导航栏优化 (Mobile Navbar)
+   ========================================= */
+@media (max-width: 768px) {
+    /* 1. 导航栏容器变垂直排列 */
+    .navbar {
+        flex-direction: column; /* 从左到右 -> 从上到下 */
+        padding: 10px 5px;      /* 减少内边距 */
+        gap: 10px;              /* 元素之间的间距 */
+    }
+
+    /* 2. Logo 适当缩小 */
+    .logo {
+        font-size: 1.2rem;
+        width: 100%;
+        text-align: center;     /* 居中显示 */
+    }
+
+    /* 3. 菜单链接调整 */
+    .menu {
+        display: flex;
+        justify-content: center; /* 居中 */
+        width: 100%;
+        gap: 15px;               /* 链接之间保持合适距离 */
+    }
+
+    .menu a {
+        margin: 0;               /* 去掉原来的大边距 */
+        font-size: 1rem;         /* 字体稍微改小 */
+        padding: 5px;            /* 增加点击区域 */
+    }
+
+    /* 4. 用户信息区 (欢迎语) */
+    .user-info {
+        font-size: 0.9rem;
+        width: 100%;
+        text-align: center;      /* 居中 */
+        margin-top: 5px;
+        background: rgba(0,0,0,0.1); /* 加一点深色背景区分 */
+        padding: 5px;
+        border-radius: 4px;
+    }
+    
+    .btn-logout {
+        margin-left: 5px !important;
+        padding: 2px 8px;
+    }
+}
+
+.highlight-flow {
+    /* 定义渐变色：粉 -> 紫 -> 橙 -> 粉 (循环) */
+    background: linear-gradient(
+        120deg, 
+        #FF69B4, 
+        #4B0082, 
+        #FFA500, 
+        #FF69B4
+    );
+    background-size: 300% 300%; /* 拉大背景以便流动 */
+    -webkit-background-clip: text; /* 把背景剪切到文字上 */
+    background-clip: text;
+    color: transparent; /* 让文字透明，显示出背景 */
+    font-weight: 900; /* 字体加粗效果更好 */
+    animation: flow-animation 4s ease infinite; /* 4秒循环一次 */
+}
+
+@keyframes flow-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.highlight-glitch {
+    position: relative;
+    color: var(--text-dark);
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.highlight-glitch::before,
+.highlight-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--soft-pink-bg); /* 背景色遮挡 */
+}
+
+.highlight-glitch::before {
+    left: 2px;
+    text-shadow: -1px 0 #ff00c1; /* 红粉色偏移 */
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim-1 5s infinite linear alternate-reverse;
+}
+
+.highlight-glitch::after {
+    left: -2px;
+    text-shadow: -1px 0 #00fff9; /* 青蓝色偏移 */
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim-2 5s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim-1 {
+    0% { clip: rect(30px, 9999px, 10px, 0); }
+    20% { clip: rect(50px, 9999px, 80px, 0); }
+    40% { clip: rect(10px, 9999px, 60px, 0); }
+    60% { clip: rect(80px, 9999px, 20px, 0); }
+    80% { clip: rect(40px, 9999px, 90px, 0); }
+    100% { clip: rect(60px, 9999px, 30px, 0); }
+}
+
+@keyframes glitch-anim-2 {
+    0% { clip: rect(60px, 9999px, 30px, 0); }
+    20% { clip: rect(10px, 9999px, 50px, 0); }
+    40% { clip: rect(90px, 9999px, 10px, 0); }
+    60% { clip: rect(20px, 9999px, 80px, 0); }
+    80% { clip: rect(50px, 9999px, 40px, 0); }
+    100% { clip: rect(30px, 9999px, 70px, 0); }
+}
