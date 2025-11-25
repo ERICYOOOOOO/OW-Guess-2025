@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWCS 2025 多伦多决战 - 竞猜大厅</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">OWCS TORONTO 2025</div>
+        <div class="menu">
+            <a href="index.html" class="active">主页</a>
+            <a href="predict.html">去预测</a>
+            <a href="rankings.html">排行榜</a>
+        </div>
+        <div id="user-display" class="user-info">
+            </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>新皇后街居委会<br><span style="color:var(--accent-purple)">神 棍 争 霸 赛</span></h1>
+            
+            <p class="intro-text">
+                👋 嘿，街坊邻居们！这里是 OWCS 2025 多伦多“预言家”大乱斗！<br>
+                是成为一眼看穿剧本的“先知”，还是变成毒奶一口的“冥灯”？<br>
+                赢了有神秘大奖，输了还有“吃土豆”成就等你拿！快上车，比赛马上开始！
+            </p>
+
+            <div class="hero-buttons">
+                <a href="predict.html" class="btn-primary btn-lg">🎮 参与预测</a>
+                <a href="rankings.html" class="btn-secondary btn-lg">🏆 查看排行</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="rules-container">
+        <h2>📜 竞猜活动细则</h2>
+        
+        <div class="rules-grid">
+            <div class="rule-card">
+                <h3><i class="fas fa-sign-in-alt"></i> 1. 参与方式</h3>
+                <p><strong>形式：</strong> 每日赛前填表，预测胜负 + 具体比分。</p>
+                <p><strong>截止：</strong> 比赛开打即锁定，逾期未填视为弃权 (0分)。提交后落子无悔，不可修改 [cite: 9]。</p>
+                <p><strong>凭证：</strong> 使用“昵称+微信号”登录，作为领奖唯一凭证 [cite: 37]。</p>
+            </div>
+
+            <div class="rule-card">
+                <h3><i class="fas fa-calculator"></i> 2. 计分规则</h3>
+                <ul>
+                    <li><strong>胜负：</strong> 猜对 +1分，猜错 0分 [cite: 13]。</li>
+                    <li><strong>比分加分 (仅胜负正确时)：</strong></li>
+                    <li>FT2 (BO3) 精确比分：<span class="highlight">+0.5分</span></li>
+                    <li>FT3 (BO5) 精确比分：<span class="highlight">+1.0分</span></li>
+                    <li>FT4 (BO7) 精确比分：<span class="highlight">+2.0分</span> [cite: 16-18]</li>
+                </ul>
+                <div class="example-box">
+                    <small>例: FT3 实际3:1，你猜3:1得2分；你猜3:2得1分；你猜1:3得0分。</small>
+                </div>
+            </div>
+
+            <div class="rule-card">
+                <h3><i class="fas fa-trophy"></i> 3. 排名与奖励</h3>
+                <p><strong>今日预测王：</strong> 每日总分最高者，获当日小奖 [cite: 27]。</p>
+                <p><strong>终极预测王：</strong> 全赛事总积分第一，获终极大奖 [cite: 29]。</p>
+                <p><strong>平分规则：</strong> 总分 > 精准比分场次 > FT4命中数 > FT3命中数 > FT2命中数 [cite: 30]。</p>
+            </div>
+
+            <div class="rule-card special-card">
+                <h3><i class="fas fa-mask"></i> 4. 隐藏成就</h3>
+                <p>每日比赛结束后结算。达成特定条件（如“三连全对”、“全错吃土豆”）可解锁成就图标并获得 <strong>+1 额外加分</strong> [cite: 34]。</p>
+                <p style="font-size: 0.9em; color: var(--accent-purple);">*同一成就每日只能被获取一次，手慢无！</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>OWCS 2025 Toronto Finals Prediction Game | Designed for the Community</p>
+    </footer>
+
+    <script src="js/client.js"></script>
+</body>
+</html>

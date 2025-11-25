@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <style>
+        @keyframes rainbow-glow {
+            0%   { border-left-color: #ff0000; box-shadow: 0 0 15px rgba(255,0,0,0.6); }
+            20%  { border-left-color: #ff00ff; box-shadow: 0 0 15px rgba(255,0,255,0.6); }
+            40%  { border-left-color: #0000ff; box-shadow: 0 0 15px rgba(0,0,255,0.6); }
+            60%  { border-left-color: #00ffff; box-shadow: 0 0 15px rgba(0,255,255,0.6); }
+            80%  { border-left-color: #00ff00; box-shadow: 0 0 15px rgba(0,255,0,0.6); }
+            100% { border-left-color: #ff0000; box-shadow: 0 0 15px rgba(255,0,0,0.6); }
+        }
+
+        .match-card.status-perfect {
+            animation: rainbow-glow 1.5s linear infinite !important;
+            border-left-width: 6px !important;
+            border-left-style: solid !important;
+            background: linear-gradient(to right, #fff5f8, #ffffff) !important;
+            transform: scale(1.02);
+            z-index: 5;
+            border-top: 1px solid #ffcc00 !important;
+            border-bottom: 1px solid #ffcc00 !important;
+            border-right: 1px solid #ffcc00 !important;
+        }
+        
+        /* 顺便修复隐藏箭头的问题 */
+        .score-display.locked {
+            background: #f9f9f9; 
+            border-color: #eee; 
+            color: #888;
+            cursor: default;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预测竞猜 - OWCS Toronto 2025</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">OWCS PREDICT</div>
+        <div class="menu">
+            <a href="index.html">主页</a>
+            <a href="predict.html" class="active">去预测</a>
+            <a href="rankings.html">排行榜</a>
+        </div>
+        <div id="user-display" class="user-info"></div>
+    </nav>
+
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>🔐 身份验证</h2>
+            <p>请输入昵称和微信号参与预测。<br>如果是首次输入，系统将自动为您注册。</p>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label>昵称 (用户名)</label>
+                    <input type="text" id="nickname" required placeholder="例如: 闪电粉红蝾螈">
+                </div>
+                <div class="form-group">
+                    <label>微信号 (作为密码)</label>
+                    <input type="text" id="wechatId" required placeholder="用于核实身份和发奖">
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%">🚀 进入系统</button>
+            </form>
+            <p id="login-error" class="error-msg"></p>
+        </div>
+    </div>
+
+    <div id="prediction-container" class="hidden">
+        
+        <header class="page-header">
+        <h1>全球总决赛 赛程预测</h1>
+        <p>点击比分框输入你的预测。FT2=抢2, FT3=抢3, FT4=抢4。</p>
+        <div class="legend">
+            <span class="badge pending">未开始</span>
+            <span class="badge correct">✅ 猜对胜负</span>
+            <span class="badge wrong">❌ 猜错</span>
+            <span class="badge perfect">🌈 完美预测 (+Bonus)</span>
+        </div>
+    </header>
+
+    <div id="schedule-list" class="schedule-wrapper">
+        <div class="loading">正在加载赛程...</div>
+    </div>
+
+    <script src="js/client.js"></script>
+    <script src="js/predict.js"></script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+/* public/css/style.css */
+:root {
+    /* 主色调：亮粉色 (参考杭州闪电/蝾螈)  */
+    --primary-pink: #FF69B4;       /* Hot Pink */
+    --light-pink: #FFB6C1;         /* Light Pink for backgrounds */
+    --soft-pink-bg: #FFF0F5;       /* Lavender Blush (极淡粉，用于大背景) */
+    
+    /* 点缀色：深紫色 (参考Team CC/狼)  */
+    --accent-purple: #4B0082;      /* Indigo/Deep Purple */
+    --deep-purple-bg: #2E1A47;     /* 用于深色卡片背景 */
+
+    /* 辅助色 */
+    --vibrant-orange: #FFA500;     /* 活力橙 (用于强调或特殊按钮)  */
+    --text-dark: #333333;          /* 深色文字 */
+    --text-light: #FFFFFF;         /* 浅色文字 */
+    
+    /* 状态色 [cite: 118] */
+    --status-correct: #32CD32;     /* 绿色 - 猜对胜负 */
+    --status-wrong: #FF4500;       /* 红色 - 猜错 */
+    --status-perfect: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); /* 彩虹色 - 完全正确 */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 现代无衬线字体 */
+    background-color: var(--soft-pink-bg); /* 整个网页背景是嫩粉色 */
+    color: var(--text-dark);
+    margin: 0;
+    padding: 0;
+}
+
+/* 按钮通用样式：亮粉底，深紫字，或者深紫底，亮粉字 */
+.btn-primary {
+    background-color: var(--primary-pink);
+    color: white;
+    border: 2px solid var(--accent-purple);
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-purple);
+    color: var(--primary-pink);
+}
+
+/* --- 导航栏 --- */
+.navbar {
+    background-color: var(--primary-pink);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.logo {
+    color: white;
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+}
+
+.menu a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.menu a.active {
+    border-bottom: 3px solid var(--accent-purple);
+}
+
+/* --- Hero Section (欢迎区) --- */
+.hero {
+    background: linear-gradient(135deg, var(--light-pink) 0%, var(--soft-pink-bg) 100%);
+    text-align: center;
+    padding: 4rem 1rem;
+    border-bottom: 5px solid var(--primary-pink);
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+}
+
+.intro-text {
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-lg {
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-secondary {
+    background-color: var(--accent-purple);
+    color: white;
+    border: 2px solid var(--primary-pink);
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+.btn-secondary:hover {
+    background-color: white;
+    color: var(--accent-purple);
+}
+
+/* --- Rules Grid (规则卡片) --- */
+.rules-container {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 20px;
+}
+
+.rules-container h2 {
+    text-align: center;
+    color: var(--accent-purple);
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* 响应式布局 */
+    gap: 20px;
+}
+
+.rule-card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border-top: 5px solid var(--accent-purple);
+    transition: transform 0.2s;
+}
+
+.rule-card:hover {
+    transform: translateY(-5px);
+}
+
+.rule-card h3 {
+    color: var(--primary-pink);
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.highlight {
+    color: var(--vibrant-orange);
+    font-weight: bold;
+}
+
+.special-card {
+    background: #fdf0f6; /* 极淡粉色背景 */
+    border-color: var(--vibrant-orange);
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: var(--deep-purple-bg);
+    color: white;
+    margin-top: 3rem;
+}
+
+/* --- 登录弹窗 (Modal) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(46, 26, 71, 0.9); /* 深紫背景不透明度 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 4px solid var(--primary-pink);
+    box-shadow: 0 0 20px var(--primary-pink);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+.error-msg { color: var(--status-wrong); margin-top: 10px; }
+.hidden { display: none !important; }
+
+/* --- 预测页通用 --- */
+.page-header {
+    text-align: center;
+    margin: 20px 0;
+    color: var(--text-dark);
+}
+.badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: white;
+    margin: 0 5px;
+}
+.badge.pending { background: #999; }
+.badge.correct { background: var(--status-correct); }
+.badge.wrong { background: var(--status-wrong); }
+.badge.perfect { background: var(--status-perfect); }
+
+/* --- 比赛卡片 (Match Card) 通用样式 --- */
+.match-card {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 5px solid #ddd; /* 默认灰色条 */
+    position: relative;
+    transition: all 0.2s;
+}
+
+/* 状态颜色边框 */
+.match-card.status-correct { border-left-color: var(--status-correct); }
+.match-card.status-wrong { border-left-color: var(--status-wrong); }
+/* === 新增：彩虹呼吸灯动画 === */
+@keyframes rainbow-glow {
+    0%   { border-left-color: #ff0000; box-shadow: -4px 0 15px rgba(255, 0, 0, 0.6); }
+    15%  { border-left-color: #ff00ff; box-shadow: -4px 0 15px rgba(255, 0, 255, 0.6); }
+    30%  { border-left-color: #0000ff; box-shadow: -4px 0 15px rgba(0, 0, 255, 0.6); }
+    45%  { border-left-color: #00ffff; box-shadow: -4px 0 15px rgba(0, 255, 255, 0.6); }
+    60%  { border-left-color: #00ff00; box-shadow: -4px 0 15px rgba(0, 255, 0, 0.6); }
+    75%  { border-left-color: #ffff00; box-shadow: -4px 0 15px rgba(255, 255, 0, 0.6); }
+    90%  { border-left-color: #ff8000; box-shadow: -4px 0 15px rgba(255, 128, 0, 0.6); }
+    100% { border-left-color: #ff0000; box-shadow: -4px 0 15px rgba(255, 0, 0, 0.6); }
+}
+
+/* === 修改：完美预测卡片样式 === */
+.match-card.status-perfect {
+    /* 1. 应用上面的动画：3秒循环一次，无限播放 */
+    animation: rainbow-glow 3s linear infinite;
+    
+    /* 2. 边框加粗，确保颜色明显 */
+    border-left-width: 6px; 
+    border-left-style: solid;
+    
+    /* 3. 背景稍微变一下，增加神圣感 */
+    background: linear-gradient(to right, #fff9fc, #ffffff);
+    
+    /* 4. 加个金色边框装饰 */
+    border-top: 1px solid #ffeeba;
+    border-bottom: 1px solid #ffeeba;
+    border-right: 1px solid #ffeeba;
+}
+
+.match-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.teams-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 30%;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+.team-logo {
+    width: 100%; 
+    height: 100%;
+    object-fit: contain; /* 保持图片比例，显示完整 */
+    display: block;      /* 消除图片底部间隙 */
+}
+
+/* 比分输入区 */
+.score-inputs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.score-input {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: 2px solid var(--accent-purple);
+    border-radius: 8px;
+    color: var(--accent-purple);
+}
+.score-input:disabled {
+    background: #f0f0f0;
+    border-color: #ccc;
+    color: #888;
+}
+
+/* 提交按钮 (小) */
+.btn-submit-predict {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: var(--accent-purple);
+    color: white;
+    border: none;
+    padding: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.btn-submit-predict:disabled { background: #ccc; cursor: not-allowed; }
+
+/* === 修改 public/css/style.css === */
+/* 删除原来的 @media (min-width: 1024px) 相关代码 */
+/* 追加或替换为以下内容： */
+
+.schedule-wrapper {
+    max-width: 800px; /* 限制最大宽度，电脑上看更舒服 */
+    margin: 0 auto;   /* 居中显示 */
+    padding: 10px;
+}
+
+/* 每一天的标题样式 */
+.day-header {
+    color: var(--accent-purple);
+    border-bottom: 2px solid var(--primary-pink);
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* === 新增：占位符比赛 (TBD) 锁定样式  === */
+.match-card.tbd-locked {
+    filter: grayscale(100%);     /* 纯黑白 */
+    opacity: 0.6;                /* 半透明 */
+    pointer-events: none;        /* 禁止鼠标点击 */
+    background-color: #f0f0f0;   /* 灰色背景 */
+    border-left-color: #999;
+}
+
+/* 提示文字 */
+.tbd-notice {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+/* === 新增：比分选择器 (Spinner) === */
+.score-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+/* 上下按钮 */
+.score-btn {
+    width: 30px;
+    height: 20px;
+    background: var(--light-pink);
+    border: none;
+    color: var(--accent-purple);
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.score-btn:hover { background: var(--primary-pink); color: white; }
+.score-btn:disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+
+/* 中间的数字 */
+.score-display {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--accent-purple);
+    background: white;
+    border: 2px solid var(--light-pink);
+    border-radius: 8px;
+}
+
+/* =========================================
+   🌈 完美预测 - 修复版彩虹特效 (优先级加强)
+   ========================================= */
+
+/* 定义呼吸灯动画关键帧 */
+@keyframes rainbow-glow {
+    0%   { border-left-color: #ff0000; box-shadow: -2px 0 15px rgba(255, 0, 0, 0.4); }
+    15%  { border-left-color: #ff00ff; box-shadow: -2px 0 15px rgba(255, 0, 255, 0.4); }
+    30%  { border-left-color: #0000ff; box-shadow: -2px 0 15px rgba(0, 0, 255, 0.4); }
+    45%  { border-left-color: #00ffff; box-shadow: -2px 0 15px rgba(0, 255, 255, 0.4); }
+    60%  { border-left-color: #00ff00; box-shadow: -2px 0 15px rgba(0, 255, 0, 0.4); }
+    75%  { border-left-color: #ffff00; box-shadow: -2px 0 15px rgba(255, 255, 0, 0.4); }
+    90%  { border-left-color: #ff8000; box-shadow: -2px 0 15px rgba(255, 128, 0, 0.4); }
+    100% { border-left-color: #ff0000; box-shadow: -2px 0 15px rgba(255, 0, 0, 0.4); }
+}
+
+/* 应用到卡片 */
+/* 使用 !important 确保它不会被其他样式(如灰色TBD)覆盖 */
+.match-card.status-perfect {
+    /* 1. 核心动画 */
+    animation: rainbow-glow 2s linear infinite !important;
+    
+    /* 2. 强制边框样式 */
+    border-left-width: 6px !important; 
+    border-left-style: solid !important;
+    
+    /* 3. 背景微调，增加神圣感 */
+    background: linear-gradient(to right, #fff0f5, #ffffff) !important;
+    
+    /* 4. 金色边框装饰 */
+    border-top: 1px solid #ffeeba !important;
+    border-bottom: 1px solid #ffeeba !important;
+    border-right: 1px solid #ffeeba !important;
+    
+    /* 5. 稍微放大一点点，突显地位 */
+    transform: scale(1.02);
+    z-index: 10;
+}
