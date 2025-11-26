@@ -62,3 +62,54 @@ function updateNav() {
         `;
     }
 }
+
+// ... (前面的代码保持不变)
+
+// === 新增：主页加载前三名 ===
+// 只有在主页(存在 hero-leaderboard 元素)时才运行
+if (document.getElementById('hero-leaderboard')) {
+    loadHeroLeaderboard();
+}
+
+async function loadHeroLeaderboard() {
+    try {
+        const res = await fetch('/api/rankings/total');
+        const users = await res.json();
+        const container = document.getElementById('hero-leaderboard');
+
+        if (!users || users.length === 0) {
+            container.innerHTML = '<div style="font-size:0.9rem; color:#666;">👻 暂无排名，快去抢首杀！</div>';
+            return;
+        }
+
+        // 只取前三名，不足3人也兼容
+        const top3 = users.slice(0, 3);
+        let html = '';
+
+        // 定义奖牌图标
+        const medals = ['👑', '🥈', '🥉'];
+        // 定义样式类名 (注意顺序：数据是按 1,2,3 排的，但 CSS 里我们用 order 属性让冠军在中间)
+        // 循环里：index 0 是冠军，index 1 是亚军...
+        
+        top3.forEach((user, index) => {
+            // 默认分数处理
+            const score = user.totalScore || 0;
+            const rankClass = `rank-${index + 1}-card`;
+            const icon = medals[index];
+
+            html += `
+                <div class="top3-card ${rankClass}">
+                    <span class="rank-icon">${icon}</span>
+                    <div class="top3-name">${user.nickname}</div>
+                    <div class="top3-score">${score}</div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error("无法加载主页排行:", err);
+        document.getElementById('hero-leaderboard').style.display = 'none'; // 出错就隐藏，不影响美观
+    }
+}
