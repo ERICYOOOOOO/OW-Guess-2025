@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Prediction = require('../models/Prediction');
 const Match = require('../models/Match');
-const User = require('../models/user'); // 注意 User 大小写
+const User = require('../models/user');
 const Log = require('../models/Log');
 
 const validateScore = (format, sA, sB) => {
@@ -16,31 +16,16 @@ const validateScore = (format, sA, sB) => {
 router.post('/', async (req, res) => {
     try {
         const { userId, matchId, teamAScore, teamBScore } = req.body;
-        
         const match = await Match.findById(matchId);
         if (!match) return res.status(404).json({ message: '比赛不存在' });
+        if (match.isExplicitlyLocked) return res.status(403).json({ message: '该比赛已被管理员暂停预测 🔒' });
+        if (new Date() >= new Date(match.startTime)) return res.status(403).json({ message: '比赛已开始，通道已关闭' });
+        if (!validateScore(match.format, parseInt(teamAScore), parseInt(teamBScore))) return res.status(400).json({ message: '比分无效' });
 
-        // 1. [新增] 检查管理员手动锁
-        if (match.isExplicitlyLocked) {
-            return res.status(403).json({ message: '该比赛已被管理员暂停预测 🔒' });
-        }
-
-        // 2. 检查时间锁
-        if (new Date() >= new Date(match.startTime)) {
-            return res.status(403).json({ message: '比赛已开始，通道已关闭' });
-        }
-
-        // 3. 检查赛制
-        if (!validateScore(match.format, parseInt(teamAScore), parseInt(teamBScore))) {
-            return res.status(400).json({ message: '比分无效' });
-        }
-
-        // 4. 检查重复
         const existingPred = await Prediction.findOne({ userId, matchId });
         if (existingPred) return res.status(400).json({ message: '不可重复预测' });
 
         const user = await User.findById(userId);
-
         const prediction = new Prediction({
             userId, matchId, teamAScore, teamBScore,
             predictedWinner: parseInt(teamAScore) > parseInt(teamBScore) ? match.teamA.name : match.teamB.name
@@ -56,9 +41,7 @@ router.post('/', async (req, res) => {
                 details: { matchName: `${match.teamA.name} vs ${match.teamB.name}`, userGuess: `${teamAScore}:${teamBScore}` }
             });
         }
-
         res.status(201).json({ success: true, message: '预测成功' });
-
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -70,40 +53,44 @@ router.get('/my/:userId', async (req, res) => {
 });
 
 // ==========================================
-// [新增] 获取全服预测统计 (胜率百分比)
+// [修改] 获取全服统计 (增加详细名单)
 // ==========================================
 router.get('/stats', async (req, res) => {
     try {
-        // 使用聚合查询，直接在数据库里算出每一场比赛的支持人数
         const stats = await Prediction.aggregate([
+            {
+                $lookup: { // 关联用户表获取昵称
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'userInfo'
+                }
+            },
+            { $unwind: '$userInfo' }, // 展开数组
             {
                 $group: {
                     _id: "$matchId",
-                    // 统计猜 A 赢的人数
-                    teamAWins: { 
-                        $sum: { $cond: [ { $gt: ["$teamAScore", "$teamBScore"] }, 1, 0 ] } 
-                    },
-                    // 统计猜 B 赢的人数
-                    teamBWins: { 
-                        $sum: { $cond: [ { $gt: ["$teamBScore", "$teamAScore"] }, 1, 0 ] } 
-                    },
-                    // 总人数
-                    total: { $sum: 1 }
+                    teamAWins: { $sum: { $cond: [ { $gt: ["$teamAScore", "$teamBScore"] }, 1, 0 ] } },
+                    teamBWins: { $sum: { $cond: [ { $gt: ["$teamBScore", "$teamAScore"] }, 1, 0 ] } },
+                    total: { $sum: 1 },
+                    // [新增] 收集详细名单
+                    details: {
+                        $push: {
+                            name: "$userInfo.nickname",
+                            score: { $concat: [ { $toString: "$teamAScore" }, ":", { $toString: "$teamBScore" } ] }
+                        }
+                    }
                 }
             }
         ]);
 
-        // 转换成方便前端查询的字典格式: { "matchId": { A: 10, B: 5, total: 15 } }
         const statsMap = {};
         stats.forEach(s => {
-            statsMap[s._id] = { A: s.teamAWins, B: s.teamBWins, total: s.total };
+            statsMap[s._id] = { A: s.teamAWins, B: s.teamBWins, total: s.total, list: s.details };
         });
 
         res.json(statsMap);
-
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 module.exports = router;

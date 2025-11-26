@@ -743,3 +743,61 @@ footer {
     color: #aaa;
     font-style: italic;
 }
+
+/* === 管理员统计悬停提示 (Tooltip) === */
+.admin-stats-box {
+    position: relative; /* 作为定位基准 */
+    cursor: help;       /* 鼠标变成问号 */
+}
+
+/* 默认隐藏的详细列表 */
+.stats-tooltip {
+    visibility: hidden;
+    width: 200px;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 100%; /* 显示在上方 */
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    
+    /* 列表样式 */
+    max-height: 300px;
+    overflow-y: auto; /* 如果人多，可以滚动 */
+    font-size: 0.75rem;
+    line-height: 1.5;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    pointer-events: none; /* 防止鼠标挡住 */
+}
+
+/* 小三角箭头 */
+.stats-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+}
+
+/* 悬停时显示 */
+.admin-stats-box:hover .stats-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 列表项样式 */
+.tooltip-item {
+    border-bottom: 1px dashed #444;
+    display: flex;
+    justify-content: space-between;
+}
+.tooltip-item:last-child { border-bottom: none; }

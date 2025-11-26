@@ -5,134 +5,80 @@
     <title>裁判控制台 - OWCS Admin</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
+        /* --- 基础布局 --- */
         body { background-color: #333; color: #333; }
-        
-        .admin-container { 
-            max-width: 1000px; 
-            margin: 2rem auto; 
-            padding: 25px; 
-            background: white; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
+        .admin-container { max-width: 1000px; margin: 2rem auto; padding: 25px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         h1 { text-align: center; color: var(--accent-purple); margin-bottom: 30px; }
-
-        .section-box { 
-            border: 2px solid #eee; 
-            padding: 20px; 
-            border-radius: 10px; 
-            margin-bottom: 25px; 
-            background: #fff;
-        }
+        .section-box { border: 2px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 25px; background: #fff; }
+        .section-title { margin-top: 0; color: var(--accent-purple); border-bottom: 2px solid var(--primary-pink); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
         
-        .section-title { 
-            margin-top: 0; 
-            color: var(--accent-purple); 
-            border-bottom: 2px solid var(--primary-pink); 
-            padding-bottom: 10px; 
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* --- 比赛列表样式 --- */
-        .match-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 12px; 
-            border-bottom: 1px solid #eee; 
-            transition: background 0.2s;
-        }
+        /* --- 比赛列表 --- */
+        .match-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 15px 12px; border-bottom: 1px solid #eee; transition: background 0.2s; }
         .match-row:hover { background: #f9f9f9; }
-        
-        .match-info { width: 45%; }
+        .match-info { width: 45%; position: relative; /* 关键：为弹窗定位 */ }
         .match-id { font-size: 0.85em; color: #888; margin-right: 10px; font-family: monospace; }
-        
-        /* TBD 锁定样式 */
-        .match-row.tbd { 
-            background-color: #f5f5f5; 
-            color: #999; 
-            opacity: 0.7; 
-        }
-        .match-row.tbd b { color: #999; }
-        
+        .match-row.tbd { background-color: #f5f5f5; color: #999; opacity: 0.7; }
         .status-finished { color: green; font-weight: bold; background: #e8f5e9; padding: 2px 8px; border-radius: 4px; }
         
-        /* --- 用户管理样式 --- */
-        .user-row { 
-            background: #fdfdfd; 
-            padding: 15px; 
-            margin-bottom: 10px; 
-            border-left: 5px solid var(--accent-purple); 
-            border-radius: 4px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        /* --- [修改] 统计条样式 --- */
+        .admin-stats-box {
+            margin-top: 8px;
+            padding: 5px 8px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            border: 1px solid #eee;
+            font-size: 0.75rem;
+            cursor: pointer; /* 变成手型，提示可点击 */
+            transition: background 0.2s;
         }
+        .admin-stats-box:hover { background: #f0f0f0; border-color: #ccc; }
+        .admin-stats-text { display: flex; justify-content: space-between; margin-bottom: 4px; color: #555; }
+        .admin-bar-bg { width: 100%; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; display: flex; }
         
-        .user-header { 
+        /* --- [修改] 详细名单弹窗 (Click to Show) --- */
+        .stats-popup {
+            display: none; /* 默认隐藏 */
+            position: absolute;
+            z-index: 1000;
+            background-color: white;
+            width: 240px;
+            max-height: 300px;
+            overflow-y: auto; /* 允许滚动 */
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            padding: 10px;
+            top: 100%; /* 显示在下方 */
+            left: 0;
+            margin-top: 5px;
+        }
+        /* 打开状态 */
+        .stats-popup.active { display: block; }
+        
+        .tooltip-item { 
             display: flex; 
             justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 10px; 
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #eee;
+            padding: 4px 0; 
+            border-bottom: 1px dashed #eee; 
+            font-size: 0.8rem;
         }
+        .tooltip-item:last-child { border-bottom: none; }
+        .tooltip-item b { color: var(--accent-purple); }
 
+        /* --- 用户管理 & 弹窗 --- */
+        .user-row { background: #fdfdfd; padding: 15px; margin-bottom: 10px; border-left: 5px solid var(--accent-purple); border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
         .user-stats { font-size: 0.9rem; color: #555; }
+        .user-achievements { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .ach-tag { display: inline-flex; align-items: center; background: #e0d4fc; color: var(--accent-purple); padding: 4px 10px; border-radius: 15px; font-size: 0.85rem; font-weight: bold; }
+        .ach-remove { cursor: pointer; color: #ff4d4d; margin-left: 6px; font-weight: bold; font-size: 1.1em; line-height: 1; }
         
-        .user-achievements { 
-            display: flex; 
-            flex-wrap: wrap; 
-            align-items: center; 
-            gap: 10px; 
-        }
-
-        .ach-tag { 
-            display: inline-flex; 
-            align-items: center;
-            background: #e0d4fc; 
-            color: var(--accent-purple); 
-            padding: 4px 10px; 
-            border-radius: 15px; 
-            font-size: 0.85rem; 
-            font-weight: bold;
-        }
-        
-        .ach-remove { 
-            cursor: pointer; 
-            color: #ff4d4d; 
-            margin-left: 6px; 
-            font-weight: bold; 
-            font-size: 1.1em;
-            line-height: 1;
-        }
-        .ach-remove:hover { color: red; transform: scale(1.2); }
-
-        /* --- 弹窗样式 --- */
         #manual-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; backdrop-filter: blur(2px); }
-        #manual-form { 
-            display:none; 
-            position: fixed; 
-            top:50%; left:50%; 
-            transform:translate(-50%, -50%); 
-            background:white; 
-            padding:25px; 
-            border-radius:15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-            z-index: 1000; 
-            width: 320px; 
-            border: 2px solid var(--primary-pink);
-        }
-        
+        #manual-form { display:none; position: fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:25px; border-radius:15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1000; width: 320px; border: 2px solid var(--primary-pink); }
         #manual-form h4 { margin-top: 0; color: var(--accent-purple); border-bottom: 1px solid #eee; padding-bottom: 10px; }
         #manual-form label { display: block; margin-top: 10px; font-size: 0.85rem; font-weight: bold; color: #666; }
         #manual-form input, #manual-form select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; }
-        
         .form-actions { display:flex; gap:10px; margin-top:20px; }
-
         input[type="number"] { width: 40px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
     </style>
 </head>
@@ -142,351 +88,182 @@
         <h1>👮 OWCS 赛事总控台</h1>
 
         <div class="section-box">
-            <h3 class="section-title">👥 玩家管理 (Achievements & Scores)</h3>
+            <h3 class="section-title">👥 玩家管理</h3>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="user-search" placeholder="输入昵称搜索玩家..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                <input type="text" id="user-search" placeholder="输入昵称..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
                 <button onclick="searchUsers()" class="btn-primary">🔍 搜索</button>
             </div>
             <div id="user-results"></div>
         </div>
 
         <div class="section-box">
-            <h3 class="section-title">🎮 比赛管理 (Matches)</h3>
+            <h3 class="section-title">🎮 比赛管理</h3>
             <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">
-                * TBD = 队伍待定 (自动锁定)。<br>
-                * 点击 🔒/🔓 按钮可手动暂停某场比赛的预测。<br>
-                * 录入结果后将自动晋级胜者。
+                * <b>点击统计条</b> 可展开/收起详细预测名单。<br>
+                * 录入结果后自动晋级。
             </p>
-            <div id="admin-matches">
-                <div class="loading">加载中...</div>
-            </div>
+            <div id="admin-matches"><div class="loading">加载中...</div></div>
         </div>
 
         <div class="section-box" style="border-color:red; background:#fff5f5; margin-top:40px;">
-            <h3 class="section-title" style="color:red; border-bottom-color:red;">☢️ 危险区域 (Danger Zone)</h3>
-            <p style="color:#c00; font-size:0.9rem;">
-                <b>工厂重置 (Factory Reset):</b><br>
-                这将删除所有玩家账号、预测记录、日志，并将赛程重置为初始状态。<br>
-                此操作不可逆！
-            </p>
-            <button onclick="factoryReset()" style="background:red; color:white; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:5px; width:100%;">
-                💣 删除所有数据并重置系统
-            </button>
+            <h3 class="section-title" style="color:red; border-bottom-color:red;">☢️ 危险区域</h3>
+            <button onclick="factoryReset()" style="background:red; color:white; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:5px; width:100%;">💣 删除所有数据并重置系统</button>
         </div>
     </div>
 
     <div id="manual-overlay" onclick="closeManual()"></div>
     <div id="manual-form">
-        <h4>⚡ 修正玩家分数</h4>
-        <p style="margin:0 0 10px 0; font-size:0.9rem;">玩家: <b id="target-user-name" style="color:var(--primary-pink)"></b></p>
-        <input type="hidden" id="target-user-id">
-        
-        <label>🎯 应用范围 (Target):</label>
-        <select id="manual-target-day">
-            <option value="0">仅修正总分 (Total Only)</option>
-            <option value="1">Day 1 (11.26)</option>
-            <option value="2">Day 2 (11.27)</option>
-            <option value="3">Day 3 (11.28)</option>
-            <option value="4">Day 4 (11.29)</option>
-            <option value="5">Day 5 (11.30)</option>
-        </select>
-        <small style="color:#888; font-size:0.75rem;">* 选择 Day X 会同时更新总榜和当天的日榜</small>
-
-        <label>🔢 分数变动 (Points):</label>
-        <input type="number" id="manual-points" placeholder="例如: 10 或 -5" style="width:100%; text-align:left;">
-        
-        <label>📝 修正理由 (Reason):</label>
-        <input type="text" id="manual-reason" placeholder="例如: 管理员补分">
-        
-        <div class="form-actions">
-            <button onclick="submitManualScore()" class="btn-primary" style="flex:1">提交修正</button>
-            <button onclick="closeManual()" style="flex:1; background:#eee; border:none; color:#333; cursor:pointer; border-radius:4px;">取消</button>
-        </div>
+        <h4>⚡ 修正分数</h4><p style="margin:0 0 10px 0;font-size:0.9rem;">玩家:<b id="target-user-name"></b></p><input type="hidden" id="target-user-id">
+        <label>🎯 应用范围:</label><select id="manual-target-day"><option value="0">仅总分</option><option value="1">Day 1</option><option value="2">Day 2</option><option value="3">Day 3</option><option value="4">Day 4</option><option value="5">Day 5</option></select>
+        <label>🔢 分数:</label><input type="number" id="manual-points" style="width:100%;text-align:left;">
+        <label>📝 理由:</label><input type="text" id="manual-reason">
+        <div class="form-actions"><button onclick="submitManualScore()" class="btn-primary" style="flex:1">提交</button><button onclick="closeManual()" style="flex:1;background:#eee;border:none;cursor:pointer;">取消</button></div>
     </div>
 
     <script>
         const API = '/api/admin';
         const headers = { 'Content-Type': 'application/json', 'adminSecret': '123456' };
-        
-        const ALL_ACHIEVEMENTS = [
-            "闪电念", "老开爱炸墙", "reverse sweep", "吃土豆", "再冲一次", 
-            "最中幻想", "landon见面交铃铛tp", "冯哥见面三段闪", "闹麻了", 
-            "以父之名", "新皇后街", "反向木子", "P>L", "西巴堡", "喜忧参半", "来晚了"
-        ];
+        const ALL_ACHIEVEMENTS = ["闪电念", "老开爱炸墙", "reverse sweep", "吃土豆", "再冲一次", "最中幻想", "landon见面交铃铛tp", "冯哥见面三段闪", "闹麻了", "以父之名", "新皇后街", "反向木子", "P>L", "西巴堡", "喜忧参半", "来晚了"];
 
         document.addEventListener('DOMContentLoaded', loadMatches);
 
-        // ============================
-        // 1. 比赛管理逻辑
-        // ============================
+        // 点击页面其他地方关闭所有弹窗
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.admin-stats-box')) {
+                document.querySelectorAll('.stats-popup').forEach(el => el.classList.remove('active'));
+            }
+        });
+
         async function loadMatches() {
-            const res = await fetch('/api/matches');
-            const matches = await res.json();
+            const [matchesRes, statsRes] = await Promise.all([ fetch('/api/matches'), fetch('/api/predict/stats') ]);
+            const matches = await matchesRes.json();
+            const stats = await statsRes.json(); 
             const container = document.getElementById('admin-matches');
             container.innerHTML = '';
 
             matches.forEach(m => {
                 const isFin = m.status === 'finished';
-                const isLocked = m.isExplicitlyLocked; // 获取手动锁定状态
-                
-                const tbdA = m.teamA.name === 'TBD';
-                const tbdB = m.teamB.name === 'TBD';
-                const isTBD = tbdA || tbdB;
-                
+                const isLocked = m.isExplicitlyLocked; 
+                const tbdA = m.teamA.name === 'TBD', tbdB = m.teamB.name === 'TBD', isTBD = tbdA || tbdB;
                 const teamA = tbdA ? m.teamA.displayName : m.teamA.name;
                 const teamB = tbdB ? m.teamB.displayName : m.teamB.name;
-
-                // 格式化时间以便显示在 input type="datetime-local" 中
                 const d = new Date(m.startTime);
-                // 处理时区偏移，转为本地 ISO 字符串前 16 位
                 const localIso = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 
-                const rowClass = isTBD ? 'match-row tbd' : 'match-row';
+                // 统计数据
+                const stat = stats[m._id] || { A: 0, B: 0, total: 0, list: [] };
+                const total = stat.total;
+                const pctA = total > 0 ? Math.round((stat.A / total) * 100) : 0;
+                const pctB = total > 0 ? Math.round((stat.B / total) * 100) : 0;
                 
-                let controlHtml = '';
-                
-                if (isTBD) {
-                    controlHtml = `<span style="font-size:0.8rem; color:#aaa;">🔒 等待晋级</span>`;
-                } else if (isFin) {
-                    controlHtml = `
-                        <span class="status-finished">✅ ${m.teamA.score} : ${m.teamB.score}</span>
-                        <button onclick="resetMatch('${m._id}')" style="margin-left:10px; border:none; background:none; cursor:pointer; font-size:0.8rem;" title="撤销并回滚分数">
-                            ❌ 撤销
-                        </button>
-                    `;
+                // [修改] 弹窗式列表 (默认隐藏，点击显示)
+                let listHtml = '';
+                if (stat.list && stat.list.length > 0) {
+                    // 按预测比分排序优化阅读
+                    stat.list.sort((a,b) => a.score.localeCompare(b.score));
+                    const listItems = stat.list.map(item => 
+                        `<div class="tooltip-item"><span>${item.name}</span><b>${item.score}</b></div>`
+                    ).join('');
+                    listHtml = `<div class="stats-popup" id="popup-${m._id}">${listItems}</div>`;
                 } else {
-                    controlHtml = `
-                        <input type="number" id="sA_${m._id}" value="${m.teamA.score}" min="0" max="4"> 
-                        <span style="margin:0 5px">:</span> 
-                        <input type="number" id="sB_${m._id}" value="${m.teamB.score}" min="0" max="4">
-                        <button onclick="settleMatch('${m._id}')" class="btn-primary" style="padding:4px 10px; font-size:0.8rem; margin-left:10px;">
-                            确认
-                        </button>
-                    `;
+                    listHtml = `<div class="stats-popup" id="popup-${m._id}"><div style="color:#999;text-align:center;">暂无记录</div></div>`;
                 }
 
-                const lockBtn = (!isTBD && !isFin) ? `
-                    <button onclick="toggleLock('${m._id}')" style="margin-left:15px; border:1px solid #ddd; background:${isLocked ? '#ffeba7' : 'white'}; padding:5px 10px; border-radius:5px; cursor:pointer;" title="${isLocked ? '点击解锁' : '点击锁定'}">
-                        ${isLocked ? '🔒 已锁' : '🔓 开放'}
-                    </button>
-                ` : '';
-
-                container.innerHTML += `
-                    <div class="${rowClass}">
-                        <div class="match-info">
-                            <span class="match-id">${m.customId}</span> 
-                            <b>${teamA}</b> <span style="font-size:0.8em; color:#888;">vs</span> <b>${teamB}</b>
-                            
-                            <div style="margin-top:8px; display:flex; align-items:center; gap:5px;">
-                                <input type="datetime-local" id="time_${m._id}" value="${localIso}" 
-                                    style="font-size:0.75rem; padding:2px; width:140px; border:1px solid #ddd; color:#666;">
-                                <button onclick="updateTime('${m._id}')" title="更新比赛时间"
-                                    style="font-size:0.7rem; padding:2px 6px; background:#f0f0f0; border:1px solid #ccc; cursor:pointer; border-radius:3px;">
-                                    🕒 更新
-                                </button>
+                let statsHtml = '';
+                if (total > 0) {
+                    statsHtml = `
+                        <div class="admin-stats-box" onclick="toggleStats('${m._id}')" title="点击展开详情">
+                            ${listHtml}
+                            <div class="admin-stats-text">
+                                <span style="color:var(--primary-pink)"><b>${stat.A}</b> 票 (${pctA}%)</span>
+                                <span>共 ${total} 人 ▼</span>
+                                <span style="color:var(--accent-purple)"><b>${stat.B}</b> 票 (${pctB}%)</span>
+                            </div>
+                            <div class="admin-bar-bg">
+                                <div style="width:${pctA}%; background:var(--primary-pink);"></div>
+                                <div style="width:${pctB}%; background:var(--accent-purple);"></div>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center;">
-                            ${controlHtml}
-                            ${lockBtn}
+                    `;
+                } else {
+                    statsHtml = `<div class="admin-stats-box" style="color:#aaa; text-align:center; cursor:default;">(暂无预测)</div>`;
+                }
+
+                // 控件
+                let controlHtml = isTBD ? `<span style="font-size:0.8rem; color:#aaa;">🔒 等待晋级</span>` :
+                    (isFin ? `<span class="status-finished">✅ ${m.teamA.score}:${m.teamB.score}</span> <button onclick="resetMatch('${m._id}')" style="margin-left:5px;border:none;background:none;cursor:pointer;">❌</button>` :
+                    `<input type="number" id="sA_${m._id}" value="${m.teamA.score}" min="0" max="4">:<input type="number" id="sB_${m._id}" value="${m.teamB.score}" min="0" max="4"><button onclick="settleMatch('${m._id}')" class="btn-primary" style="padding:2px 8px;font-size:0.8rem;margin-left:5px;">确认</button>`);
+                
+                const lockBtn = (!isTBD && !isFin) ? `<button onclick="toggleLock('${m._id}')" style="margin-left:15px; border:1px solid #ddd; background:${isLocked ? '#ffeba7' : 'white'}; padding:5px 10px; border-radius:5px; cursor:pointer;">${isLocked ? '🔒' : '🔓'}</button>` : '';
+
+                container.innerHTML += `
+                    <div class="${isTBD?'match-row tbd':'match-row'}">
+                        <div class="match-info">
+                            <span class="match-id">${m.customId}</span> <b>${teamA}</b> vs <b>${teamB}</b>
+                            <div style="margin-top:8px; display:flex; align-items:center; gap:5px;">
+                                <input type="datetime-local" id="time_${m._id}" value="${localIso}" style="font-size:0.75rem; padding:2px; width:135px; border:1px solid #ddd; color:#666;">
+                                <button onclick="updateTime('${m._id}')" style="font-size:0.7rem; padding:2px 6px; background:#f0f0f0; border:1px solid #ccc; cursor:pointer;">🕒 更新</button>
+                            </div>
+                            ${statsHtml}
                         </div>
+                        <div style="display:flex; align-items:center;">${controlHtml}${lockBtn}</div>
                     </div>`;
             });
         }
 
+        // [新增] 切换弹窗显示
+        function toggleStats(matchId) {
+            const popup = document.getElementById(`popup-${matchId}`);
+            if(!popup) return;
+            
+            const isActive = popup.classList.contains('active');
+            // 先关闭所有
+            document.querySelectorAll('.stats-popup').forEach(el => el.classList.remove('active'));
+            
+            // 如果之前没打开，现在打开
+            if (!isActive) popup.classList.add('active');
+        }
+
         async function updateTime(matchId) {
             const input = document.getElementById(`time_${matchId}`);
-            const newTimeStr = input.value; // "2025-11-26T19:00"
-            if (!newTimeStr) return alert("时间不能为空");
-            
-            const newDate = new Date(newTimeStr);
-            const isoTime = newDate.toISOString(); // 转回 UTC
-
-            if (!confirm(`⚠️ 确认修改比赛时间吗？\n\n新时间: ${newDate.toLocaleString()}\n\n修改后，自动锁定/解锁将立即根据新时间生效。`)) return;
-
-            try {
-                const res = await fetch(API + '/update-time', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({ matchId: matchId, newStartTime: isoTime })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert(data.message);
-                    // loadMatches(); // 可选：刷新以确认
-                } else {
-                    alert("错误: " + data.message);
-                }
-            } catch (e) { alert("网络错误"); }
+            if (!input.value) return alert("时间不能为空");
+            const isoTime = new Date(input.value).toISOString();
+            if (!confirm(`确认修改时间?`)) return;
+            await fetch(API + '/update-time', { method: 'POST', headers, body: JSON.stringify({ matchId, newStartTime: isoTime }) });
+            alert("时间已更新");
         }
 
         async function settleMatch(id) {
-            const sA = document.getElementById(`sA_${id}`).value;
-            const sB = document.getElementById(`sB_${id}`).value;
-            
-            if(!confirm(`⚠️ 确认录入结果 ${sA} : ${sB} 吗？\n\n这将触发：\n1. 所有玩家判分\n2. 隐藏成就自动结算\n3. 胜者自动晋级`)) return;
-            
-            try {
-                const res = await fetch(API + '/settle', { 
-                    method:'POST', headers, 
-                    body:JSON.stringify({ matchId:id, scoreA:sA, scoreB:sB }) 
-                });
-                const data = await res.json();
-                if(data.success) {
-                    alert(data.message + (data.achievements && data.achievements.length ? `\n\n🏆 本场产生新成就:\n${data.achievements.join('\n')}` : ''));
-                    loadMatches();
-                } else {
-                    alert('❌ 错误: ' + data.message);
-                }
-            } catch(e) { alert('网络错误'); }
+            const sA=document.getElementById(`sA_${id}`).value, sB=document.getElementById(`sB_${id}`).value;
+            if(!confirm(`确认 ${sA}:${sB}?`))return;
+            await fetch(API+'/settle',{method:'POST',headers,body:JSON.stringify({matchId:id,scoreA:sA,scoreB:sB})}); loadMatches();
         }
-
-        async function resetMatch(id) {
-            if(!confirm('⚠️ 高危操作：确定要撤销这场比赛吗？\n\n所有因此场比赛获得的积分将被扣除！')) return;
-            const res = await fetch(API + '/reset-match', { method:'POST', headers, body:JSON.stringify({matchId:id}) });
-            alert((await res.json()).message);
-            loadMatches();
-        }
-
-        // [新增] 切换锁定状态
-        async function toggleLock(id) {
-            const res = await fetch(API + '/toggle-lock', { method:'POST', headers, body:JSON.stringify({matchId:id}) });
-            const data = await res.json();
-            if(data.success) {
-                loadMatches();
-            } else {
-                alert(data.message);
-            }
-        }
-
-        // [新增] 工厂重置
-        async function factoryReset() {
-            const code = prompt("⚠️ 高危操作警告！\n\n这将清空所有玩家数据并重置赛程！\n\n请输入 'DELETE' (全大写) 确认操作:");
-            if (code !== 'DELETE') {
-                if (code !== null) alert("确认码错误");
-                return;
-            }
-
-            const res = await fetch(API + '/factory-reset', { 
-                method:'POST', headers, 
-                body: JSON.stringify({ confirmation: code }) 
-            });
-            const data = await res.json();
-            
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert("错误: " + data.message);
-            }
-        }
-
-        // ============================
-        // 2. 玩家管理逻辑
-        // ============================
-        async function searchUsers() {
-            const q = document.getElementById('user-search').value;
-            const res = await fetch(API + `/search-users?q=${q}`, { headers });
-            const users = await res.json();
-            renderUsers(users);
-        }
-
-        function renderUsers(users) {
-            const container = document.getElementById('user-results');
-            if (users.length === 0) { container.innerHTML = '<p style="text-align:center; color:#888">未找到相关玩家</p>'; return; }
-
-            container.innerHTML = users.map(u => {
-                let achHtml = u.achievements.map(a => `
-                    <span class="ach-tag">
-                        ${a.name}
-                        <span class="ach-remove" onclick="manageAch('${u._id}', 'remove', '${a.name}')" title="移除此成就">×</span>
-                    </span>
-                `).join('');
-                if(achHtml === '') achHtml = '<span style="color:#999; font-size:0.8rem">暂无成就</span>';
-
-                let options = ALL_ACHIEVEMENTS.map(name => `<option value="${name}">${name}</option>`).join('');
-
-                return `
-                <div class="user-row">
-                    <div class="user-header">
-                        <div>
-                            <span style="font-size:1.1rem; font-weight:bold;">${u.nickname}</span>
-                            <div class="user-stats">🏆 总分: <b>${u.totalScore}</b></div>
-                        </div>
-                        <button onclick="openManual('${u._id}', '${u.nickname}')" style="background:#fff; border:1px solid #ccc; padding:5px 10px; cursor:pointer; border-radius:4px;">
-                            ⚡ 修正分数
-                        </button>
-                    </div>
-                    
-                    <div style="background:#f4f4f4; padding:8px; border-radius:6px;">
-                        <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">成就管理 (添加+0.5分 / 移除-0.5分):</div>
-                        <div class="user-achievements">
-                            ${achHtml}
-                            <div style="display:flex; align-items:center; margin-left:auto;">
-                                <select id="ach-select-${u._id}" style="padding:3px; border-radius:4px; border:1px solid #ccc;">${options}</select>
-                                <button onclick="addAch('${u._id}')" style="background:var(--accent-purple); color:white; border:none; padding:4px 8px; border-radius:4px; margin-left:5px; cursor:pointer;">
-                                    + 添加
-                                </button>
-                            </div>
+        async function resetMatch(id){ if(confirm('撤销?')) { await fetch(API+'/reset-match',{method:'POST',headers,body:JSON.stringify({matchId:id})}); loadMatches(); } }
+        async function toggleLock(id){ const res=await fetch(API+'/toggle-lock',{method:'POST',headers,body:JSON.stringify({matchId:id})}); if((await res.json()).success) loadMatches(); }
+        async function factoryReset(){ if(prompt("输入 DELETE 确认:")==='DELETE'){ await fetch(API+'/factory-reset',{method:'POST',headers,body:JSON.stringify({confirmation:'DELETE'})}); location.reload(); } }
+        async function searchUsers(){ const q=document.getElementById('user-search').value; const res=await fetch(API+`/search-users?q=${q}`,{headers}); renderUsers(await res.json()); }
+        function renderUsers(users){ 
+            const c=document.getElementById('user-results'); c.innerHTML=users.map(u=>`
+            <div class="user-row">
+                <div class="user-header"><div><span style="font-size:1.1rem; font-weight:bold;">${u.nickname}</span> (${u.totalScore})</div><button onclick="openManual('${u._id}','${u.nickname}')">⚡ 修正</button></div>
+                <div style="background:#f4f4f4; padding:8px; border-radius:6px;">
+                    <div class="user-achievements">
+                        ${u.achievements.map(a => `<span class="ach-tag">${a.name}<span class="ach-remove" onclick="manageAch('${u._id}', 'remove', '${a.name}')">×</span></span>`).join('') || '<span style="color:#999;font-size:0.8rem">无成就</span>'}
+                        <div style="margin-left:auto; display:flex;">
+                            <select id="ach-select-${u._id}">${ALL_ACHIEVEMENTS.map(n => `<option>${n}</option>`)}</select>
+                            <button onclick="addAch('${u._id}')" style="margin-left:5px;">+</button>
                         </div>
                     </div>
-                </div>`;
-            }).join('');
+                </div>
+            </div>`).join(''); 
         }
-
-        async function manageAch(userId, action, achName) {
-            const verb = action === 'add' ? '授予' : '移除';
-            if(!confirm(`确定要为该玩家 ${verb} 成就 [${achName}] 吗？\n分数将自动 ${action === 'add' ? '+0.5' : '-0.5'}。`)) return;
-
-            const res = await fetch(API + '/manage-achievement', {
-                method: 'POST', headers,
-                body: JSON.stringify({ userId, action, achievementName: achName })
-            });
-            const data = await res.json();
-            if (data.success) searchUsers(); 
-            else alert(data.message);
-        }
-
-        function addAch(userId) {
-            const achName = document.getElementById(`ach-select-${userId}`).value;
-            manageAch(userId, 'add', achName);
-        }
-
-        // ============================
-        // 3. 手动修正逻辑
-        // ============================
-        function openManual(id, name) {
-            document.getElementById('manual-overlay').style.display = 'block';
-            document.getElementById('manual-form').style.display = 'block';
-            document.getElementById('target-user-name').innerText = name;
-            document.getElementById('target-user-id').value = id;
-            document.getElementById('manual-points').value = '';
-            document.getElementById('manual-reason').value = '';
-        }
-        function closeManual() {
-            document.getElementById('manual-overlay').style.display = 'none';
-            document.getElementById('manual-form').style.display = 'none';
-        }
-        async function submitManualScore() {
-            const id = document.getElementById('target-user-id').value;
-            const pts = document.getElementById('manual-points').value;
-            const reason = document.getElementById('manual-reason').value;
-            const targetDay = document.getElementById('manual-target-day').value;
-            
-            if(!pts || !reason) return alert("请填写完整的分数和理由");
-
-            const res = await fetch(API + '/manual-score', { 
-                method:'POST', headers, 
-                body: JSON.stringify({ userId:id, points:pts, reason:reason, targetDay:targetDay }) 
-            });
-            const data = await res.json();
-            if(data.success) {
-                alert('修正成功');
-                closeManual();
-                searchUsers();
-            } else {
-                alert('错误: ' + data.message);
-            }
+        async function manageAch(uid,act,name){ if(confirm(act)) { await fetch(API+'/manage-achievement',{method:'POST',headers,body:JSON.stringify({userId:uid,action:act,achievementName:name})}); searchUsers(); } }
+        function addAch(id) { manageAch(id, 'add', document.getElementById(`ach-select-${id}`).value); }
+        function openManual(id,name){ document.getElementById('manual-overlay').style.display='block'; document.getElementById('manual-form').style.display='block'; document.getElementById('target-user-name').innerText=name; document.getElementById('target-user-id').value=id; }
+        function closeManual(){ document.getElementById('manual-overlay').style.display='none'; document.getElementById('manual-form').style.display='none'; }
+        async function submitManualScore(){ 
+            const id=document.getElementById('target-user-id').value, pts=document.getElementById('manual-points').value, r=document.getElementById('manual-reason').value, d=document.getElementById('manual-target-day').value;
+            await fetch(API+'/manual-score',{method:'POST',headers,body:JSON.stringify({userId:id,points:pts,reason:r,targetDay:d})}); closeManual(); searchUsers();
         }
     </script>
 </body>
