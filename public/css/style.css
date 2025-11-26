@@ -586,19 +586,18 @@ footer {
     80% { clip: rect(50px, 9999px, 40px, 0); }
     100% { clip: rect(30px, 9999px, 70px, 0); }
 }
-
 /* =========================================
-   🏆 主页前三名预览样式
+   🏆 主页前三名预览样式 (阶梯视觉优化版)
    ========================================= */
 .top3-container {
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* 让大家站在领奖台上（底部对齐） */
+    align-items: flex-end; /* 底部对齐，像领奖台一样 */
     gap: 15px;
     margin: 20px auto 30px;
     padding: 15px;
     max-width: 500px;
-    min-height: 120px; /* 占位防止抖动 */
+    min-height: 140px; /* 稍微加高一点 */
 }
 
 .top3-card {
@@ -611,33 +610,53 @@ footer {
     flex-direction: column;
     align-items: center;
     position: relative;
-    transition: transform 0.3s;
     width: 30%;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性动画 */
 }
 
-.top3-card:hover {
-    transform: translateY(-5px);
-}
-
-/* 冠军样式 (最大) */
+/* --- 冠军 (最大的) --- */
 .rank-1-card {
-    order: 2; /* 放在中间 */
-    transform: scale(1.1);
-    border: 2px solid #FFD700; /* 金色边框 */
-    z-index: 2;
+    order: 2; /* C位 */
+    border: 2px solid #FFD700;
     background: linear-gradient(to bottom, #fff, #fffbf0);
+    z-index: 10;
+    /* 默认放大 1.15倍 */
+    transform: scale(1.15);
+    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3); /* 金色光晕 */
+}
+/* 冠军悬停：保持放大，并上浮 */
+.rank-1-card:hover {
+    transform: scale(1.2) translateY(-8px);
+    z-index: 11;
 }
 
-/* 亚军样式 */
+/* --- 亚军 (标准的) --- */
 .rank-2-card {
-    order: 1; /* 放在左边 */
-    border: 2px solid #C0C0C0; /* 银色 */
+    order: 1; /* 左边 */
+    border: 2px solid #C0C0C0;
+    z-index: 5;
+    /* 默认大小 1.0 */
+    transform: scale(1.0);
+}
+/* 亚军悬停 */
+.rank-2-card:hover {
+    transform: scale(1.0) translateY(-5px);
+    z-index: 6;
 }
 
-/* 季军样式 */
+/* --- 季军 (最小的) --- */
 .rank-3-card {
-    order: 3; /* 放在右边 */
-    border: 2px solid #CD7F32; /* 铜色 */
+    order: 3; /* 右边 */
+    border: 2px solid #CD7F32;
+    z-index: 1;
+    /* [修改] 缩小到 0.9倍 */
+    transform: scale(0.95);
+    opacity: 0.9; /* 稍微淡一点，增加层次感 */
+}
+/* 季军悬停 */
+.rank-3-card:hover {
+    transform: scale(0.95) translateY(-5px);
+    z-index: 6;
 }
 
 /* 皇冠/奖牌图标 */
@@ -671,6 +690,4 @@ footer {
     animation: pulse 1.5s infinite;
 }
 
-@keyframes pulse {
-    0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; }
-}
+@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
