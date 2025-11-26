@@ -69,4 +69,41 @@ router.get('/my/:userId', async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// ==========================================
+// [新增] 获取全服预测统计 (胜率百分比)
+// ==========================================
+router.get('/stats', async (req, res) => {
+    try {
+        // 使用聚合查询，直接在数据库里算出每一场比赛的支持人数
+        const stats = await Prediction.aggregate([
+            {
+                $group: {
+                    _id: "$matchId",
+                    // 统计猜 A 赢的人数
+                    teamAWins: { 
+                        $sum: { $cond: [ { $gt: ["$teamAScore", "$teamBScore"] }, 1, 0 ] } 
+                    },
+                    // 统计猜 B 赢的人数
+                    teamBWins: { 
+                        $sum: { $cond: [ { $gt: ["$teamBScore", "$teamAScore"] }, 1, 0 ] } 
+                    },
+                    // 总人数
+                    total: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // 转换成方便前端查询的字典格式: { "matchId": { A: 10, B: 5, total: 15 } }
+        const statsMap = {};
+        stats.forEach(s => {
+            statsMap[s._id] = { A: s.teamAWins, B: s.teamBWins, total: s.total };
+        });
+
+        res.json(statsMap);
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;

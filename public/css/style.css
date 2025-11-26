@@ -691,3 +691,55 @@ footer {
 }
 
 @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+/* =========================================
+   📊 胜率支持条 (Stats Bar)
+   ========================================= */
+.stats-container {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+    width: 100%;
+}
+
+.stats-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+/* 进度条槽 */
+.stats-bar {
+    display: flex;
+    width: 100%;
+    height: 8px; /* 条的高度 */
+    background-color: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 左边 (Team A - 粉色) */
+.stats-fill-a {
+    background-color: var(--primary-pink);
+    height: 100%;
+    transition: width 0.5s ease;
+}
+
+/* 右边 (Team B - 紫色) */
+.stats-fill-b {
+    background-color: var(--accent-purple);
+    height: 100%;
+    transition: width 0.5s ease;
+}
+
+/* 如果还没人预测 */
+.stats-empty {
+    width: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #aaa;
+    font-style: italic;
+}

@@ -49,7 +49,7 @@
         }
         .match-row:hover { background: #f9f9f9; }
         
-        .match-info { width: 40%; }
+        .match-info { width: 45%; }
         .match-id { font-size: 0.85em; color: #888; margin-right: 10px; font-family: monospace; }
         
         /* TBD 锁定样式 */
@@ -211,7 +211,7 @@
         const ALL_ACHIEVEMENTS = [
             "闪电念", "老开爱炸墙", "reverse sweep", "吃土豆", "再冲一次", 
             "最中幻想", "landon见面交铃铛tp", "冯哥见面三段闪", "闹麻了", 
-            "以父之名", "新皇后街", "反向木子", "P>L", "西巴堡", "喜忧参半"
+            "以父之名", "新皇后街", "反向木子", "P>L", "西巴堡", "喜忧参半", "来晚了"
         ];
 
         document.addEventListener('DOMContentLoaded', loadMatches);
@@ -236,7 +236,11 @@
                 const teamA = tbdA ? m.teamA.displayName : m.teamA.name;
                 const teamB = tbdB ? m.teamB.displayName : m.teamB.name;
 
-                // TBD 状态下，输入框和按钮都禁用
+                // 格式化时间以便显示在 input type="datetime-local" 中
+                const d = new Date(m.startTime);
+                // 处理时区偏移，转为本地 ISO 字符串前 16 位
+                const localIso = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+
                 const rowClass = isTBD ? 'match-row tbd' : 'match-row';
                 
                 let controlHtml = '';
@@ -261,10 +265,8 @@
                     `;
                 }
 
-                // [新增] 锁定按钮
-                // 只有在非TBD且非结束状态下显示
                 const lockBtn = (!isTBD && !isFin) ? `
-                    <button onclick="toggleLock('${m._id}')" style="margin-left:15px; border:1px solid #ddd; background:${isLocked ? '#ffeba7' : 'white'}; padding:5px 10px; border-radius:5px; cursor:pointer;" title="${isLocked ? '当前已锁定，点击解锁' : '当前开放，点击锁定'}">
+                    <button onclick="toggleLock('${m._id}')" style="margin-left:15px; border:1px solid #ddd; background:${isLocked ? '#ffeba7' : 'white'}; padding:5px 10px; border-radius:5px; cursor:pointer;" title="${isLocked ? '点击解锁' : '点击锁定'}">
                         ${isLocked ? '🔒 已锁' : '🔓 开放'}
                     </button>
                 ` : '';
@@ -274,7 +276,15 @@
                         <div class="match-info">
                             <span class="match-id">${m.customId}</span> 
                             <b>${teamA}</b> <span style="font-size:0.8em; color:#888;">vs</span> <b>${teamB}</b>
-                            <span style="font-size:0.75em; color:#aaa; margin-left:5px;">(${m.format})</span>
+                            
+                            <div style="margin-top:8px; display:flex; align-items:center; gap:5px;">
+                                <input type="datetime-local" id="time_${m._id}" value="${localIso}" 
+                                    style="font-size:0.75rem; padding:2px; width:140px; border:1px solid #ddd; color:#666;">
+                                <button onclick="updateTime('${m._id}')" title="更新比赛时间"
+                                    style="font-size:0.7rem; padding:2px 6px; background:#f0f0f0; border:1px solid #ccc; cursor:pointer; border-radius:3px;">
+                                    🕒 更新
+                                </button>
+                            </div>
                         </div>
                         <div style="display:flex; align-items:center;">
                             ${controlHtml}
@@ -282,6 +292,32 @@
                         </div>
                     </div>`;
             });
+        }
+
+        async function updateTime(matchId) {
+            const input = document.getElementById(`time_${matchId}`);
+            const newTimeStr = input.value; // "2025-11-26T19:00"
+            if (!newTimeStr) return alert("时间不能为空");
+            
+            const newDate = new Date(newTimeStr);
+            const isoTime = newDate.toISOString(); // 转回 UTC
+
+            if (!confirm(`⚠️ 确认修改比赛时间吗？\n\n新时间: ${newDate.toLocaleString()}\n\n修改后，自动锁定/解锁将立即根据新时间生效。`)) return;
+
+            try {
+                const res = await fetch(API + '/update-time', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ matchId: matchId, newStartTime: isoTime })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    // loadMatches(); // 可选：刷新以确认
+                } else {
+                    alert("错误: " + data.message);
+                }
+            } catch (e) { alert("网络错误"); }
         }
 
         async function settleMatch(id) {
@@ -383,7 +419,7 @@
                     </div>
                     
                     <div style="background:#f4f4f4; padding:8px; border-radius:6px;">
-                        <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">成就管理 (添加+1分 / 移除-1分):</div>
+                        <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">成就管理 (添加+0.5分 / 移除-0.5分):</div>
                         <div class="user-achievements">
                             ${achHtml}
                             <div style="display:flex; align-items:center; margin-left:auto;">
@@ -400,7 +436,7 @@
 
         async function manageAch(userId, action, achName) {
             const verb = action === 'add' ? '授予' : '移除';
-            if(!confirm(`确定要为该玩家 ${verb} 成就 [${achName}] 吗？\n分数将自动 ${action === 'add' ? '+1' : '-1'}。`)) return;
+            if(!confirm(`确定要为该玩家 ${verb} 成就 [${achName}] 吗？\n分数将自动 ${action === 'add' ? '+0.5' : '-0.5'}。`)) return;
 
             const res = await fetch(API + '/manage-achievement', {
                 method: 'POST', headers,

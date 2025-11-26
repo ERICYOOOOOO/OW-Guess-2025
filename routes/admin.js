@@ -155,8 +155,8 @@ async function processAchievements(currentMatch) {
                 const user = await User.findById(uid);
                 if (user && !user.achievements.some(a => a.name === rule.name)) {
                     user.achievements.push({ name: rule.name });
-                    user.totalScore += 1;
-                    user.scoreLog.push({ reason: `🏆 抢到首杀成就: [${rule.name}]`, points: 1, matchId: currentMatch._id });
+                    user.totalScore += 0.5;
+                    user.scoreLog.push({ reason: `🏆 抢到首杀成就: [${rule.name}]`, points: 0.5, matchId: currentMatch._id });
                     await user.save();
                     logs.push(`${user.nickname} 夺得 [${rule.name}]`);
                 }
@@ -311,15 +311,15 @@ router.post('/manage-achievement', requireAdmin, async (req, res) => {
         if(action==='add') {
             if(u.achievements.some(a=>a.name===achievementName)) return res.status(400).json({message:'已拥有'});
             u.achievements.push({name:achievementName}); 
-            u.totalScore+=1; change=1;
-            u.scoreLog.push({reason: `[管理员颁发] ${achievementName}`, points: 1});
+            u.totalScore+=0.5; change=0.5;
+            u.scoreLog.push({reason: `[管理员颁发] ${achievementName}`, points: 0.5});
         } 
         else if(action==='remove') {
             const i=u.achievements.findIndex(a=>a.name===achievementName); 
             if(i===-1) return res.status(400).json({message:'未拥有'});
             u.achievements.splice(i,1); 
-            u.totalScore-=1; change=-1;
-            u.scoreLog.push({reason: `[管理员移除] ${achievementName}`, points: -1});
+            u.totalScore-=0.5; change=-0.5;
+            u.scoreLog.push({reason: `[管理员移除] ${achievementName}`, points: -0.5});
         }
         
         await u.save();
@@ -360,5 +360,41 @@ router.post('/toggle-lock', requireAdmin, async (req, res) => {
 
     } catch (e) { res.status(500).json({ message: e.message }); }
 });
+// ==========================================
+// 7. [新增] 修改比赛开始时间 (Update Start Time)
+// ==========================================
+router.post('/update-time', requireAdmin, async (req, res) => {
+    const { matchId, newStartTime } = req.body;
+    
+    try {
+        const match = await Match.findById(matchId);
+        if (!match) return res.status(404).json({ message: '比赛不存在' });
 
+        // 保存旧时间用于日志
+        const oldTime = match.startTime;
+        
+        // 更新时间 (前端传来的是 ISO 格式字符串，Mongoose 会自动转为 Date)
+        match.startTime = newStartTime;
+        await match.save();
+
+        // 记录管理员操作日志
+        await Log.create({
+            action: "ADMIN_UPDATE_TIME",
+            operatorId: "ADMIN",
+            operatorName: "Administrator",
+            target: `Match ${match.customId}`,
+            details: { 
+                oldTime: oldTime,
+                newTime: match.startTime,
+                note: "管理员手动调整比赛时间"
+            }
+        });
+
+        res.json({ success: true, message: `时间已更新！\n比赛锁定时间现已变更为: ${new Date(newStartTime).toLocaleString()}` });
+
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({ message: e.message }); 
+    }
+});
 module.exports = router;
