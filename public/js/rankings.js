@@ -1,6 +1,5 @@
 // public/js/rankings.js
 
-// === 成就元数据字典 ===
 const ACHIEVEMENT_META = {
     "闪电念": { icon: "⚡", desc: "连续三场比分全猜对 (时间顺序上)" },
     "老开爱炸墙": { icon: "🧱", desc: "连续三场胜负全错 (时间顺序上)" },
@@ -24,22 +23,13 @@ let currentTabType = 'total';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadRankings('total');
-    
-    // 开启轮询 (5秒一次)
-    setInterval(() => {
-        loadRankings(currentTabType, true); 
-    }, 5000);
+    setInterval(() => { loadRankings(currentTabType, true); }, 5000);
 });
 
-// 切换标签页
 window.switchTab = async (type) => {
     currentTabType = type;
-    
-    // 1. 样式切换
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     const buttons = document.querySelectorAll('.tab-btn');
-    
-    // 更新水印副标题
     const subtitle = document.getElementById('export-subtitle');
 
     if (type === 'daily') { 
@@ -57,11 +47,9 @@ window.switchTab = async (type) => {
         if(subtitle) subtitle.innerText = "总积分榜";
     }
 
-    // 2. 加载数据
     await loadRankings(type, false);
 };
 
-// [新增] 截图下载功能
 window.downloadImage = async () => {
     const captureArea = document.getElementById('capture-area');
     const watermark = document.getElementById('export-watermark');
@@ -69,38 +57,27 @@ window.downloadImage = async () => {
     
     if (!captureArea || !watermark) return alert("页面元素加载不全");
 
-    // 1. 准备截图
     watermark.style.display = 'block';
     const originalText = btn.innerText;
     btn.innerHTML = '⏳ 生成中...';
     btn.disabled = true;
 
     try {
-        // 2. 执行截图
-        const canvas = await html2canvas(captureArea, {
-            scale: 2, // 高清
-            backgroundColor: '#ffffff',
-            useCORS: true
-        });
-
-        // 3. 下载
+        const canvas = await html2canvas(captureArea, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
         const link = document.createElement('a');
         link.download = `OWCS-Ranking-${new Date().getTime()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-
     } catch (err) {
-        console.error("截图失败:", err);
-        alert("生成图片失败，请使用手机截屏");
+        console.error(err);
+        alert("生成图片失败");
     } finally {
-        // 4. 恢复
         watermark.style.display = 'none';
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 };
 
-// 核心加载函数
 async function loadRankings(type, isSilent = false) {
     const container = document.getElementById('rank-container');
     if (!isSilent) container.innerHTML = '<div class="loading">正在拉取排名数据...</div>';
@@ -116,9 +93,7 @@ async function loadRankings(type, isSilent = false) {
         }
 
         const res = await fetch(url);
-        if (!res.ok) throw new Error("网络请求失败");
         const users = await res.json();
-        
         renderTable(users, type);
 
     } catch (err) {
@@ -126,7 +101,6 @@ async function loadRankings(type, isSilent = false) {
     }
 }
 
-// 渲染表格
 function renderTable(users, type) {
     const container = document.getElementById('rank-container');
     
@@ -135,11 +109,28 @@ function renderTable(users, type) {
         return;
     }
 
+    // [修改] 动态定义表头
     let headerHtml = '';
+    // 如果是积分榜(总榜或日榜)，显示战绩列
+    const showStats = type === 'total' || type === 'daily';
+
     if (type === 'achievements') {
-        headerHtml = `<tr><th width="15%">排名</th><th width="25%">玩家</th><th width="15%">解锁数量</th><th width="45%">成就展示 (悬停查看)</th></tr>`;
+        headerHtml = `
+            <tr>
+                <th width="10%">排名</th>
+                <th width="30%">玩家</th>
+                <th width="10%">解锁</th>
+                <th width="50%">成就展示</th>
+            </tr>`;
     } else {
-        headerHtml = `<tr><th width="15%">排名</th><th width="35%">玩家</th><th width="20%">积分</th><th width="30%">成就</th></tr>`;
+        headerHtml = `
+            <tr>
+                <th width="10%">排名</th>
+                <th width="25%">玩家</th>
+                <th width="15%">积分</th>
+                <th width="25%">战绩详情</th>
+                <th width="25%">成就</th>
+            </tr>`;
     }
 
     let html = `<table class="leaderboard-table"><thead>${headerHtml}</thead><tbody>`;
@@ -150,7 +141,6 @@ function renderTable(users, type) {
     for (let i = 0; i < users.length; i++) {
         const user = users[i];
         
-        // 确定数值
         let value = 0;
         let prevValue = 0;
 
@@ -165,20 +155,32 @@ function renderTable(users, type) {
             if (i > 0) prevValue = users[i-1].achievements ? users[i-1].achievements.length : 0;
         }
 
-        // 并列逻辑
-        if (i > 0 && value === prevValue) {
-            skip++;
-        } else if (i > 0) {
-            currentRank += 1 + skip;
-            skip = 0;
-        }
+        if (i > 0 && value === prevValue) { skip++; } 
+        else if (i > 0) { currentRank += 1 + skip; skip = 0; }
 
         let rankDisplay = `<span style="font-weight:bold; color:#666">${currentRank}</span>`;
         if (currentRank === 1) rankDisplay = '👑';
         else if (currentRank === 2) rankDisplay = '🥈';
         else if (currentRank === 3) rankDisplay = '🥉';
 
-        // 成就图标
+        // [新增] 战绩 HTML
+        let statsHtml = '';
+        if (showStats && user.stats) {
+            statsHtml = `
+                <div style="font-size:0.75rem; color:#666; line-height:1.4;">
+                    <div>胜负: <b>${user.stats.wins}</b></div>
+                    <div style="display:flex; gap:5px; justify-content:center; opacity:0.8;">
+                        <span title="FT4精确">FT4:${user.stats.ft4}</span>
+                        <span title="FT3精确">FT3:${user.stats.ft3}</span>
+                        <span title="FT2精确">FT2:${user.stats.ft2}</span>
+                    </div>
+                </div>
+            `;
+        } else if (showStats) {
+            statsHtml = '<span style="color:#ccc">-</span>';
+        }
+
+        // 成就 HTML
         let achievementHtml = '';
         if (user.achievements && user.achievements.length > 0) {
             user.achievements.forEach(ach => {
@@ -193,7 +195,11 @@ function renderTable(users, type) {
         html += `<tr>
             <td style="font-size:1.2rem;">${rankDisplay}</td>
             <td style="font-weight:bold;">${user.nickname}</td>
-            <td style="color:var(--accent-purple); font-weight:900; font-size:1.1rem;">${value}</td>
+            
+            ${showStats ? `<td style="color:var(--accent-purple); font-weight:900; font-size:1.1rem;">${value}</td>` : ''}
+            ${showStats ? `<td>${statsHtml}</td>` : ''}
+            ${!showStats ? `<td style="color:var(--accent-purple); font-weight:900;">${value}</td>` : ''}
+            
             <td>${achievementHtml}</td>
         </tr>`;
     }
