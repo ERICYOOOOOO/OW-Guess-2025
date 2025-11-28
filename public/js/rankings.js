@@ -16,7 +16,8 @@ const ACHIEVEMENT_META = {
     "P>L": { icon: "🦁", desc: "猜对CR战胜OA的比分" },
     "西巴堡": { icon: "🍔", desc: "猜对TM战胜OA的比分" },
     "喜忧参半": { icon: "🌗", desc: "猜对胜负但是猜错比分" },
-    "来晚了": { icon: "🏃", desc: "在后来触发猜对胜负但是猜错比分" }
+    "来晚了": { icon: "🏃", desc: "在后来触发猜对胜负但是猜错比分" },
+    "难兄难弟": { icon: "👬", desc: "猜对OA对战CC的比分" }
 };
 
 let currentTabType = 'total';
