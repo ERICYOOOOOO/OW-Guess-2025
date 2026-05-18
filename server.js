@@ -10,6 +10,7 @@ const matchRoutes = require('./routes/matches');
 const predictRoutes = require('./routes/predict');
 const rankingRoutes = require('./routes/rankings');
 const adminRoutes = require('./routes/admin');
+const { router: bracketRoutes } = require('./routes/bracket');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +34,7 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/predict', predictRoutes);
 app.use('/api/rankings', rankingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/bracket', bracketRoutes);
 
 // 5. 默认路由 (让所有未匹配的 API 请求都返回主页，防止 404)
 app.get('/', (req, res) => {
