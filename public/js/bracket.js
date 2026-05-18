@@ -58,16 +58,16 @@ function maxScore(format) {
 }
 
 // 解析某场比赛某 slot 的队伍 (递归追溯)
+// slot 接受 'teamA'/'teamB' (def 上的字段名)
 function resolveTeam(matchId, slot) {
     const def = MATCHES_BY_ID[matchId][slot];
     if (def.source === 'fixed') return def.team;
     const parent = state.picks[def.from];
     if (!parent || !parent.winnerSlot) return null;
-    const parentDef = MATCHES_BY_ID[def.from];
-    const winnerSlot = parent.winnerSlot;
+    const winnerSlot = parent.winnerSlot;   // 'A' or 'B'
     const loserSlot = winnerSlot === 'A' ? 'B' : 'A';
-    const targetSlot = def.source === 'winner' ? winnerSlot : loserSlot;
-    return resolveTeam(def.from, targetSlot);
+    const target = def.source === 'winner' ? winnerSlot : loserSlot;
+    return resolveTeam(def.from, 'team' + target);
 }
 
 function hasAnyDependentPicked(matchId) {

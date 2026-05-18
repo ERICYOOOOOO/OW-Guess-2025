@@ -16,8 +16,8 @@ const requireAdmin = (req, res, next) => next();
 const BRACKET_MAP = {
     "M1": { win:  { to: "M8",  slot: "teamB" }, lose: { to: "M6", slot: "teamA" } },
     "M2": { win:  { to: "M8",  slot: "teamA" }, lose: { to: "M6", slot: "teamB" } },
-    "M3": { win:  { to: "M7",  slot: "teamB" }, lose: { to: "M5", slot: "teamA" } },
-    "M4": { win:  { to: "M7",  slot: "teamA" }, lose: { to: "M5", slot: "teamB" } },
+    "M3": { win:  { to: "M7",  slot: "teamB" }, lose: { to: "M5", slot: "teamB" } },
+    "M4": { win:  { to: "M7",  slot: "teamA" }, lose: { to: "M5", slot: "teamA" } },
     "M5": { win:  { to: "M9",  slot: "teamB" } },
     "M6": { win:  { to: "M10", slot: "teamB" } },
     "M7": { win:  { to: "UBF", slot: "teamA" }, lose: { to: "M10", slot: "teamA" } },
