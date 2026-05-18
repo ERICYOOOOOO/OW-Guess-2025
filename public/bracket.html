@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bracket 预测 - OWCS 2026 Champions Clash</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .bracket-page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .bracket-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lock-banner {
+            background: #fdf0f6;
+            border: 2px dashed var(--primary-pink);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 15px 0;
+            color: var(--accent-purple);
+            text-align: center;
+            font-weight: bold;
+        }
+        .lock-banner.locked {
+            background: #fff5f5;
+            border-color: #ff4d4d;
+            color: #d9534f;
+        }
+        .bracket-round {
+            margin: 30px 0 10px;
+        }
+        .bracket-round h3 {
+            color: var(--accent-purple);
+            border-bottom: 2px solid var(--primary-pink);
+            padding-bottom: 6px;
+        }
+        .bracket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+        }
+        .bracket-card {
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: border-color 0.2s;
+        }
+        .bracket-card.picked {
+            border-color: var(--primary-pink);
+            box-shadow: 0 4px 12px rgba(255,105,180,0.15);
+        }
+        .bracket-card.unresolved {
+            opacity: 0.55;
+        }
+        .bracket-card.locked-by-dep {
+            background: #fafafa;
+        }
+        .bc-head {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #888;
+            margin-bottom: 6px;
+        }
+        .bc-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 4px;
+            border-radius: 6px;
+        }
+        .bc-row.win { background: rgba(75,0,130,0.06); }
+        .bc-team {
+            flex: 1;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+        }
+        .bc-team .placeholder { color: #999; font-weight: normal; font-style: italic; }
+        .bc-score {
+            width: 60px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .bc-score input[type=number] {
+            width: 38px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 900;
+            color: var(--accent-purple);
+            border: 1px solid var(--light-pink);
+            border-radius: 5px;
+            padding: 3px;
+        }
+        .bc-pick-btn {
+            background: var(--light-pink);
+            color: var(--accent-purple);
+            border: none;
+            padding: 5px 9px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .bc-pick-btn:hover { background: var(--primary-pink); color: white; }
+        .bc-pick-btn.active { background: var(--accent-purple); color: white; }
+        .bc-pick-btn:disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+        .bc-clear {
+            background: transparent;
+            border: 1px dashed #ccc;
+            color: #888;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        .bc-clear:hover { background: #fbe7e7; color: #d9534f; border-color: #d9534f; }
+        .bc-clear:disabled { opacity: 0.4; cursor: not-allowed; }
+        .bc-msg {
+            font-size: 0.72rem;
+            color: #d9534f;
+            margin-top: 4px;
+            min-height: 1em;
+        }
+        .submit-bar {
+            position: sticky;
+            bottom: 10px;
+            background: white;
+            border: 2px solid var(--accent-purple);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .progress-text { font-weight: bold; color: var(--accent-purple); }
+        .submit-bar button {
+            background: var(--primary-pink);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .submit-bar button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .timezone-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .timezone-row span b { color: var(--accent-purple); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">OWCS 2026 CHAMPIONS CLASH</div>
+    <div class="menu">
+        <a href="index.html">主页</a>
+        <a href="predict.html">实时预测</a>
+        <a href="bracket.html" class="active">Bracket</a>
+        <a href="rankings.html">排行榜</a>
+    </div>
+    <div id="user-display" class="user-info"></div>
+</nav>
+
+<div id="login-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <h2>🔐 身份验证</h2>
+        <p>请先在【实时预测】页面登录后再来填 Bracket。</p>
+        <a href="predict.html" class="btn-primary" style="display:inline-block; text-decoration:none;">去登录</a>
+    </div>
+</div>
+
+<div class="bracket-page">
+    <div class="bracket-header">
+        <h1 style="color:var(--accent-purple); margin-bottom:5px;">🎯 我的 Bracket</h1>
+        <p style="color:#666; margin:0;">一次性预测全部 14 场。M1 开赛即锁定，不可修改。</p>
+        <div id="lock-banner" class="lock-banner">⏳ 加载中...</div>
+    </div>
+
+    <div id="bracket-content">
+        <div style="text-align:center; padding:40px; color:#999;">加载中...</div>
+    </div>
+
+    <div id="submit-bar" class="submit-bar" style="display:none;">
+        <div>
+            <div class="progress-text" id="progress-text">已填 0 / 14</div>
+            <div style="font-size:0.75rem; color:#999;">提交后无法修改</div>
+        </div>
+        <button id="submit-btn" disabled onclick="submitBracket()">提交 Bracket</button>
+    </div>
+</div>
+
+<script src="js/client.js"></script>
+<script src="js/bracket.js"></script>
+
+</body>
+</html>
