@@ -41,6 +41,15 @@ app.use('/api/rankings', rankingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bracket', bracketRoutes);
 
+// 健康检查 (Render Free + UptimeRobot 5min ping 保活, 不依赖 DB)
+app.get('/healthz', (req, res) => {
+    res.json({
+        ok: true,
+        ts: Date.now(),
+        dbState: mongoose.connection.readyState  // 0=disconn 1=conn 2=connecting 3=disconnecting
+    });
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
