@@ -1,21 +1,28 @@
 // public/js/predict.js
 
-// === 队伍全称映射表 ===
+// === 队伍全称映射表 (OWCS 2026 Champions Clash 8 队) ===
 const TEAM_FULL_NAMES = {
-    "SSG": "Spacestation",
-    "PEPS": "Team Peps",
-    "QAD": "Al Qadsiah",
-    "GK": "Geekay Esports",
-    "CC": "Team CC",
-    "T1": "T1",
-    "FLC": "Team Falcons",
-    "VL": "VARREL",
-    "CR": "Crazy Raccoon",
     "WBG": "Weibo Gaming",
+    "VP": "Virtus.pro",
+    "ZETA": "ZETA DIVISION",
+    "SSG": "Spacestation Gaming",
+    "DAL": "Dallas Fuel",
+    "CR": "Crazy Raccoon",
     "TM": "Twisted Minds",
-    "TL": "Team Liquid",
+    "AG": "All Gamers",
     "TBD": "TBD"
 };
+
+// EDT / CDT / PDT 三时区显示工具
+function formatThreeTZ(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const fmt = (tz) => new Intl.DateTimeFormat('zh-CN', {
+        timeZone: tz, month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+    }).format(d);
+    return `EDT ${fmt('America/New_York')} · CDT ${fmt('America/Chicago')} · PDT ${fmt('America/Los_Angeles')}`;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. 检查登录状态
@@ -147,10 +154,13 @@ function createMatchCard(match, pred, matchStats) {
         statsHtml = `<div class="stats-container"><div class="stats-empty">暂无其他玩家预测数据</div></div>`;
     }
 
+    const tzLine = formatThreeTZ(match.startTime);
+
     return `
         <div class="match-card ${statusClass}" data-id="${match._id}">
             <div class="match-info">
                 <span>${match.customId} • ${match.format}</span>
+                <span style="font-size:0.72rem; color:#888;">${tzLine}</span>
             </div>
             
             <div class="teams-container">

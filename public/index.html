@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OWCS 2025 多伦多决战 - 竞猜大厅</title>
+    <title>OWCS 2026 Champions Clash - 新皇后街居委会竞猜大厅</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="logo">OWCS TORONTO 2025</div>
+        <div class="logo">OWCS 2026 CHAMPIONS CLASH</div>
         <div class="menu">
             <a href="index.html" class="active">主页</a>
-            <a href="predict.html">去预测</a>
+            <a href="predict.html">实时预测</a>
+            <a href="bracket.html">Bracket</a>
             <a href="rankings.html">排行榜</a>
         </div>
         <div id="user-display" class="user-info">
@@ -23,15 +24,18 @@
     <header class="hero">
         <div class="hero-content">
             <h1>新皇后街居委会<br><span style="color:var(--accent-purple)">英 杰 预 测 王</span></h1>
-            
+            <h2 style="font-size:1.1rem; color:#555; margin-top:-5px;">OWCS 2026 · Champions Clash · 东京 Tachikawa Tachihi · 5/22 - 5/24</h2>
+
             <p class="intro-text">
-                OWCS 决战一触即发！
+                Stage 1 国际总决赛一触即发！8 队双败、14 场，从 WBG vs VP 那一刻起就是真刀真枪。
 
 这里是验证你游戏理解的终极竞技场。是成为一眼看穿剧本的🔮先知，还是变成一口毒奶的🌲木子？
 
-来碰一碰！赢了有神秘大奖，输了也不要紧，毕竟咱们还有“吃土豆”这种隐藏成就等你拿！
+两种玩法：
+<b>实时单场</b> — 每场赛前下注，胜负 +1，比分对再加 bonus (FT2 +0.5 / FT3 +1 / FT4 +2)。
+<b>整张 Bracket</b> — 一次性押满 14 场，M1 一开赛就锁死。押对队伍 + 比分一起赚，押错队伍那场 0 分。
 
-现在输入你的预测!比赛马上开始！
+合并榜按 max(两种玩法) 排名，能屠的赛道都给你留好了。
             </p>
 
             <div id="hero-leaderboard" class="top3-container">
@@ -39,8 +43,9 @@
             </div>
 
             <div class="hero-buttons">
-                <a href="predict.html" class="btn-primary btn-lg">🎮 参与预测</a>
-                <a href="rankings.html" class="btn-secondary btn-lg">🏆 查看排行</a>
+                <a href="bracket.html" class="btn-primary btn-lg">🎯 提交我的 Bracket</a>
+                <a href="predict.html" class="btn-secondary btn-lg">🎮 实时预测</a>
+                <a href="rankings.html" class="btn-secondary btn-lg">🏆 排行榜</a>
             </div>
         </div>
     </header>
@@ -74,26 +79,30 @@
             </div>
 
             <div class="rule-card">
-                <h3><i class="fas fa-trophy"></i> 3. 排名与奖励</h3>
-                <p><strong>每日预测王：</strong> 每日总分最高者，可以获得<span class="highlight-glitch">DC专属Title</span>!</p>
-                <p><strong>大师预测王：</strong> 全赛事总积分第三，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季战令</span>!</p>
-                <p><strong>宗师预测王：</strong> 全赛事总积分第二，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季高级战令</span>!</p>
-                <p><strong>英杰预测王：</strong> 全赛事总积分第一，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季终极战令</span>!</p>
-                <p><strong>平分规则：</strong> 总分 > 精准比分场次 > FT4命中数 > FT3命中数 > FT2命中数。</p>
-                <p><strong>领奖方式：</strong> 请主动联系群主GoOdrew,若不在微信群或者DC中,或者无法联系到,将失去获奖资格哦,最终排名往后延顺。</p>
+                <h3><i class="fas fa-sitemap"></i> 3. Bracket 玩法</h3>
+                <p><strong>形式：</strong> 一次性提交 14 场 (M1~M11 + UBF/LBF/GF) 的胜方 + 比分。</p>
+                <p><strong>截止：</strong> <b>M1 一开赛即锁定</b> (2026-05-22 03:00 UTC)，之后不可提交。</p>
+                <p><strong>评分：</strong> 该场实际两队 == 你预测两队，才进入判分；否则该场 0 分。判分规则同实时单场 (+1 胜负，+bonus 比分)。</p>
+                <p><strong>修改：</strong> 选了后面会锁前面，要改前面得先取消所有依赖。</p>
+            </div>
+
+            <div class="rule-card">
+                <h3><i class="fas fa-trophy"></i> 4. 排名与奖励</h3>
+                <p><strong>合并榜：</strong> 取 max(实时, bracket) 排名，并标注来源徽章。</p>
+                <p><strong>Bracket 榜：</strong> 只看 bracket 成绩，提交早的优先。</p>
+                <p><strong>大师预测王：</strong> 合并榜第三，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季战令</span>!</p>
+                <p><strong>宗师预测王：</strong> 合并榜第二，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季高级战令</span>!</p>
+                <p><strong>英杰预测王：</strong> 合并榜第一，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季终极战令</span>!</p>
+                <p><strong>平分规则：</strong> 详见排行榜 tiebreaker (有 bracket > 提交早 > 胜负多 > FT4/3/2 比分多)。</p>
+                <p><strong>领奖方式：</strong> 请主动联系群主，若不在微信群或 DC，无法联系到将失去获奖资格，最终排名往后延顺。</p>
                 <p style="font-size: 0.9em; color: var(--accent-purple);">*如还遇平分,将平分奖品价值.最终解释权归主办方.</p>
             </div>
 
-            <div class="rule-card special-card">
-                <h3><i class="fas fa-mask"></i> 4. 隐藏成就</h3>
-                <p>每场比赛结束后结算。达成特定条件可解锁成就图标并获得 <strong>+0.5 额外加分</strong>。</p>
-                <p style="font-size: 0.9em; color: var(--accent-purple);">*同一成就只能被获取一次，手慢无！</p>
-            </div>
         </div>
     </section>
 
     <footer>
-        <p>OWCS 2025 Toronto Finals Prediction Game for the Community | Made by RIKO | Designed by Coldbear | helped by GoOdrew
+        <p>OWCS 2026 Champions Clash Prediction Game · Made by 新皇后街居委会
         </p>
     </footer>
 

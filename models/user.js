@@ -5,40 +5,33 @@ const userSchema = new mongoose.Schema({
     wechatId: { type: String, required: true, select: false },
     isAdmin: { type: Boolean, default: false },
 
-    // 总分 (包含所有预测 + 成就 + 手动修正)
+    // 实时单场预测累计分
     totalScore: { type: Number, default: 0, index: true },
-    
-    // 每日得分记录 (旧字段，保留以防万一，但主要逻辑已转为实时计算)
-    dailyScores: [{ date: String, score: Number }],
+
+    // Bracket (整体晋级预测) 累计分
+    bracketScore: { type: Number, default: 0, index: true },
+    bracketSubmittedAt: { type: Date },
 
     // 详细日志
     scoreLog: [{
         matchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Match' },
-        reason: String, 
+        reason: String,
         points: Number,
+        source: { type: String, enum: ['realtime', 'bracket', 'manual'], default: 'realtime' },
         timestamp: { type: Date, default: Date.now }
     }],
 
-    // 隐藏成就
-    achievements: [{
-        name: String,
-        unlockedAt: { type: Date, default: Date.now }
-    }],
-
-    // === [新增] 每日手动修正记录 ===
-    // 用于在计算日榜时，额外加上这些分数
+    // 管理员手动修正记录 (按天)
     manualAdjustments: [{
-        day: Number,   // 哪一天的修正 (1, 2, 3...)
-        points: Number, // 修正了多少分
-        reason: String  // 理由
+        day: Number,
+        points: Number,
+        reason: String
     }]
 });
 
-// 辅助方法
-userSchema.methods.addPoints = async function(points, reason, matchId = null, dateStr) {
+userSchema.methods.addPoints = async function(points, reason, matchId = null, source = 'realtime') {
     this.totalScore += points;
-    this.scoreLog.push({ matchId, reason, points });
-    // dailyScores 逻辑已废弃，但为了兼容性保留
+    this.scoreLog.push({ matchId, reason, points, source });
     return this.save();
 };
 

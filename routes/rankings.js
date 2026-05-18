@@ -1,58 +1,89 @@
+// routes/rankings.js
+// 合并榜 (/total): max(realtime, bracket)，完整 tiebreaker 链
+// Bracket 榜 (/bracket): 只列提交过 bracket 的人
+
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
-const Match = require('../models/Match');
 const Prediction = require('../models/Prediction');
+const BracketPrediction = require('../models/BracketPrediction');
+
+async function getUserStats() {
+    // 仅看实时单场预测的战绩
+    const agg = await Prediction.aggregate([
+        { $match: { status: 'judged' } },
+        { $lookup: { from: 'matches', localField: 'matchId', foreignField: '_id', as: 'matchInfo' } },
+        { $unwind: '$matchInfo' },
+        {
+            $group: {
+                _id: "$userId",
+                wins: { $sum: { $cond: [{ $gte: ["$pointsEarned", 1] }, 1, 0] } },
+                ft2Perfect: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT2"] }] }, 1, 0] } },
+                ft3Perfect: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT3"] }] }, 1, 0] } },
+                ft4Perfect: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT4"] }] }, 1, 0] } }
+            }
+        }
+    ]);
+    const map = {};
+    agg.forEach(s => map[s._id.toString()] = s);
+    return map;
+}
 
 // ==========================================
-// 1. 总排行榜 (Total Ranking)
+// 合并榜 (Total = 合并榜)
 // ==========================================
 router.get('/total', async (req, res) => {
     try {
-        // 1. 获取所有用户基础数据 (含总分、成就)
-        const users = await User.find().select('nickname totalScore achievements').lean();
-
-        // 2. 聚合查询：统计所有已结算预测的详细战绩
-        const statsAgg = await Prediction.aggregate([
-            { $match: { status: 'judged' } }, // 只统计已结算的
-            {
-                $lookup: {
-                    from: 'matches',
-                    localField: 'matchId',
-                    foreignField: '_id',
-                    as: 'matchInfo'
-                }
-            },
-            { $unwind: '$matchInfo' },
-            {
-                $group: {
-                    _id: "$userId",
-                    // 胜负正确数 (得分>=1 即视为胜负正确，因为基础分是1)
-                    wins: { $sum: { $cond: [{ $gte: ["$pointsEarned", 1] }, 1, 0] } },
-                    // FT2 完全正确数
-                    ft2: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT2"] }] }, 1, 0] } },
-                    // FT3 完全正确数
-                    ft3: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT3"] }] }, 1, 0] } },
-                    // FT4 完全正确数
-                    ft4: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT4"] }] }, 1, 0] } }
-                }
-            }
-        ]);
-
-        // 3. 将统计数据合并到用户列表中
-        const statsMap = {};
-        statsAgg.forEach(s => statsMap[s._id.toString()] = s);
+        const users = await User.find().select('nickname totalScore bracketScore bracketSubmittedAt').lean();
+        const statsMap = await getUserStats();
+        const submittedSet = new Set(
+            (await BracketPrediction.find().select('userId').lean()).map(b => b.userId.toString())
+        );
 
         const finalUsers = users.map(u => {
-            const s = statsMap[u._id.toString()] || { wins: 0, ft2: 0, ft3: 0, ft4: 0 };
+            const realtime = u.totalScore || 0;
+            const bracket = u.bracketScore || 0;
+            const hasBracket = submittedSet.has(u._id.toString());
+            const displayScore = Math.max(realtime, bracket);
+            const displaySource = (hasBracket && bracket >= realtime) ? 'bracket' : 'realtime';
+            const s = statsMap[u._id.toString()] || { wins: 0, ft2Perfect: 0, ft3Perfect: 0, ft4Perfect: 0 };
             return {
-                ...u,
-                stats: { wins: s.wins, ft2: s.ft2, ft3: s.ft3, ft4: s.ft4 }
+                _id: u._id,
+                nickname: u.nickname,
+                realtimeScore: realtime,
+                bracketScore: bracket,
+                bracketSubmittedAt: u.bracketSubmittedAt || null,
+                hasBracket,
+                displayScore,
+                displaySource,
+                stats: {
+                    wins: s.wins,
+                    ft2: s.ft2Perfect,
+                    ft3: s.ft3Perfect,
+                    ft4: s.ft4Perfect
+                }
             };
         });
 
-        // 4. 排序
-        finalUsers.sort((a, b) => b.totalScore - a.totalScore);
+        // 完整 tiebreaker 链
+        finalUsers.sort((a, b) => {
+            if (a.displayScore !== b.displayScore) return b.displayScore - a.displayScore;
+            // tiebreaker 1: 有 bracket 优先
+            if (a.hasBracket !== b.hasBracket) return a.hasBracket ? -1 : 1;
+            // tiebreaker 2: 都有 bracket -> 提交早的优先
+            if (a.hasBracket && b.hasBracket) {
+                const ta = a.bracketSubmittedAt ? new Date(a.bracketSubmittedAt).getTime() : Infinity;
+                const tb = b.bracketSubmittedAt ? new Date(b.bracketSubmittedAt).getTime() : Infinity;
+                if (ta !== tb) return ta - tb;
+                return 0;
+            }
+            // tiebreaker 3: 都没 bracket -> 实时战绩级联
+            if (a.stats.wins !== b.stats.wins) return b.stats.wins - a.stats.wins;
+            if (a.stats.ft4 !== b.stats.ft4) return b.stats.ft4 - a.stats.ft4;
+            if (a.stats.ft3 !== b.stats.ft3) return b.stats.ft3 - a.stats.ft3;
+            if (a.stats.ft2 !== b.stats.ft2) return b.stats.ft2 - a.stats.ft2;
+            return 0;
+        });
 
         res.json(finalUsers);
     } catch (err) {
@@ -61,113 +92,46 @@ router.get('/total', async (req, res) => {
 });
 
 // ==========================================
-// 2. 今日排行榜 (Daily Ranking)
+// Bracket 榜
 // ==========================================
-router.get('/daily/:day', async (req, res) => {
+router.get('/bracket', async (req, res) => {
     try {
-        const day = parseInt(req.params.day);
+        const bps = await BracketPrediction.find().select('userId bracketScore submittedAt').lean();
+        if (bps.length === 0) return res.json([]);
 
-        // 1. 找出该日所有比赛
-        const dayMatches = await Match.find({ day: day }).select('_id format');
-        if (dayMatches.length === 0) return res.json([]);
-        
-        const matchIds = dayMatches.map(m => m._id);
+        const userIds = bps.map(b => b.userId);
+        const users = await User.find({ _id: { $in: userIds } }).select('nickname').lean();
+        const userMap = new Map(users.map(u => [u._id.toString(), u]));
+        const statsMap = await getUserStats();
 
-        // 2. 聚合查询
-        const leaderboard = await Prediction.aggregate([
-            { $match: { matchId: { $in: matchIds } } },
-            {
-                $lookup: { // 关联 Match 表获取 format
-                    from: 'matches',
-                    localField: 'matchId',
-                    foreignField: '_id',
-                    as: 'matchInfo'
+        const rows = bps.map(b => {
+            const u = userMap.get(b.userId.toString());
+            const s = statsMap[b.userId.toString()] || { wins: 0, ft2Perfect: 0, ft3Perfect: 0, ft4Perfect: 0 };
+            return {
+                _id: b.userId,
+                nickname: u ? u.nickname : '(unknown)',
+                bracketScore: b.bracketScore || 0,
+                submittedAt: b.submittedAt,
+                stats: {
+                    wins: s.wins,
+                    ft2: s.ft2Perfect,
+                    ft3: s.ft3Perfect,
+                    ft4: s.ft4Perfect
                 }
-            },
-            { $unwind: '$matchInfo' },
-            {
-                $group: {
-                    _id: "$userId",
-                    dailyScore: { $sum: "$pointsEarned" },
-                    // 统计今日战绩
-                    wins: { $sum: { $cond: [{ $gte: ["$pointsEarned", 1] }, 1, 0] } },
-                    ft2: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT2"] }] }, 1, 0] } },
-                    ft3: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT3"] }] }, 1, 0] } },
-                    ft4: { $sum: { $cond: [{ $and: ["$isPerfect", { $eq: ["$matchInfo.format", "FT4"] }] }, 1, 0] } }
-                }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "userInfo"
-                }
-            },
-            { $unwind: "$userInfo" }
-        ]);
-
-        // 3. 处理手动修正分 (Manual Adjustments)
-        // 这里的逻辑稍微复杂：我们需要把 User 表里的 manualAdjustments 加到 aggregation 的结果里
-        // 并且，如果某人今天没预测但有修正分，也要加进去。
-        
-        const result = [];
-        const userMap = {}; // userId -> entry
-
-        // 先把预测数据放进去
-        leaderboard.forEach(item => {
-            const uid = item._id.toString();
-            const entry = {
-                nickname: item.userInfo.nickname,
-                dailyScore: item.dailyScore,
-                achievements: item.userInfo.achievements,
-                stats: { wins: item.wins, ft2: item.ft2, ft3: item.ft3, ft4: item.ft4 }
             };
-            userMap[uid] = entry;
-            result.push(entry);
         });
 
-        // 再叠加手动修正
-        const usersWithAdj = await User.find({ "manualAdjustments.day": day }).select('_id nickname manualAdjustments achievements');
-        usersWithAdj.forEach(u => {
-            const uid = u._id.toString();
-            const adjTotal = u.manualAdjustments.filter(a => a.day === day).reduce((sum, a) => sum + a.points, 0);
-            
-            if (userMap[uid]) {
-                // 已经在榜上，直接加分
-                userMap[uid].dailyScore += adjTotal;
-            } else {
-                // 没在榜上（今天没预测），新增一条
-                const entry = {
-                    nickname: u.nickname,
-                    dailyScore: adjTotal,
-                    achievements: u.achievements,
-                    stats: { wins: 0, ft2: 0, ft3: 0, ft4: 0 } // 没预测所以战绩为0
-                };
-                result.push(entry);
-            }
+        rows.sort((a, b) => {
+            if (a.bracketScore !== b.bracketScore) return b.bracketScore - a.bracketScore;
+            const ta = a.submittedAt ? new Date(a.submittedAt).getTime() : Infinity;
+            const tb = b.submittedAt ? new Date(b.submittedAt).getTime() : Infinity;
+            return ta - tb;
         });
 
-        // 4. 排序
-        result.sort((a, b) => b.dailyScore - a.dailyScore);
-
-        res.json(result);
-
+        res.json(rows);
     } catch (err) {
-        console.error("日榜计算错误:", err);
         res.status(500).json({ message: err.message });
     }
-});
-
-// ==========================================
-// 3. 隐藏成就排行榜 (不受影响)
-// ==========================================
-router.get('/achievements', async (req, res) => {
-    try {
-        const users = await User.find().select('nickname achievements');
-        users.sort((a, b) => b.achievements.length - a.achievements.length);
-        res.json(users);
-    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 module.exports = router;
