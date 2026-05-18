@@ -85,7 +85,17 @@
 <body>
 
     <div class="admin-container">
-        <h1>👮 OWCS 赛事总控台</h1>
+        <h1>👮 OWCS 2026 赛事总控台</h1>
+
+        <div class="section-box">
+            <h3 class="section-title">🔄 Liquipedia 同步</h3>
+            <div id="sync-status-box" style="font-size:0.85rem; color:#555;">加载中...</div>
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button onclick="syncNow()" class="btn-primary">🔄 立即同步</button>
+                <button onclick="syncToggle()" id="sync-toggle-btn" style="background:#eee; border:1px solid #ccc; padding:6px 12px; border-radius:5px; cursor:pointer;">暂停/恢复</button>
+            </div>
+            <div id="sync-diff-box" style="margin-top:12px;"></div>
+        </div>
 
         <div class="section-box">
             <h3 class="section-title">👥 玩家管理</h3>
@@ -124,7 +134,44 @@
         const API = '/api/admin';
         const headers = { 'Content-Type': 'application/json', 'adminSecret': '123456' };
 
-        document.addEventListener('DOMContentLoaded', loadMatches);
+        document.addEventListener('DOMContentLoaded', () => { loadMatches(); loadSyncStatus(); });
+        setInterval(loadSyncStatus, 15000);
+
+        async function loadSyncStatus() {
+            try {
+                const res = await fetch(API+'/sync-status', {headers});
+                const s = await res.json();
+                const fmt = (d) => d ? new Date(d).toLocaleString() : '-';
+                document.getElementById('sync-status-box').innerHTML = `
+                    <div>状态: <b style="color:${s.paused?'red':'green'}">${s.paused?'⏸ 已暂停':'▶ 运行中'}</b> ${s.enabled?'':'(环境变量已禁用)'}</div>
+                    <div>高频轮询: ${s.pollHigh/1000}s &nbsp; 低频: ${s.pollLow/1000}s &nbsp; 窗口: ±${s.windowHours}h</div>
+                    <div>上次高频: ${fmt(s.lastHighRun)} &nbsp; 上次低频: ${fmt(s.lastLowRun)}</div>
+                    <div>连续失败: ${s.consecutiveFailures} ${s.lastError?`<span style="color:red">(${s.lastError})</span>`:''}</div>
+                    <div>最近差异条数: <b style="color:${s.lastDiffCount>0?'orange':'#888'}">${s.lastDiffCount}</b></div>`;
+                document.getElementById('sync-toggle-btn').innerText = s.paused ? '▶ 恢复' : '⏸ 暂停';
+            } catch(e){ document.getElementById('sync-status-box').innerText = '同步状态接口不可用'; }
+        }
+        async function syncNow(){
+            const res = await fetch(API+'/sync-now',{method:'POST',headers});
+            const data = await res.json();
+            const box = document.getElementById('sync-diff-box');
+            if (!data.success) { box.innerHTML = `<div style="color:red">${data.message}</div>`; return; }
+            if (!data.diffs || data.diffs.length === 0) {
+                box.innerHTML = '<div style="color:green;">✅ 全部一致，无差异</div>';
+            } else {
+                box.innerHTML = '<b>检测到 ' + data.diffs.length + ' 处差异 (不自动覆盖):</b>'
+                    + '<ul style="font-size:0.8rem; margin-top:4px;">'
+                    + data.diffs.map(d => `<li>${d.customId} · ${d.field}: <span style="color:#666">本地</span> <b>${JSON.stringify(d.current)}</b> → <span style="color:#666">线上</span> <b>${JSON.stringify(d.scraped)}</b></li>`).join('')
+                    + '</ul>';
+            }
+            loadSyncStatus();
+        }
+        async function syncToggle(){
+            const btn = document.getElementById('sync-toggle-btn');
+            const isPaused = btn.innerText.includes('恢复');
+            await fetch(API + (isPaused?'/sync-resume':'/sync-pause'),{method:'POST',headers});
+            loadSyncStatus();
+        }
 
         // 点击页面其他地方关闭所有弹窗
         document.addEventListener('click', function(event) {
