@@ -257,4 +257,91 @@ M1 第一场为 2026-05-22T03:00:00Z (= 5/21 20:00 PT)。前端按客户端浏�
 
 ---
 
+## 7. 部署 / 环境变量准备
+
+代码里**不写死任何线上凭据**，所有敏感配置走 `.env`：
+
+```env
+# .env (不进 git，已在 .gitignore)
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster.xxx.mongodb.net/owcs_prediction_2026
+PORT=3000
+
+# Liquipedia 同步用
+LIQUIPEDIA_USER_AGENT=OWCS-Guess-2026/1.0 (contact@example.com)
+LIQUIPEDIA_SYNC_ENABLED=true     # 全自动同步开关，可临场关
+LIQUIPEDIA_POLL_HIGH_FREQ_MS=60000   # 高频窗口 1 分钟
+LIQUIPEDIA_POLL_LOW_FREQ_MS=600000   # 低频体检 10 分钟
+LIQUIPEDIA_WINDOW_HOURS=2            # 比赛 ±N 小时算高频窗口
+
+# Admin
+ADMIN_TOKEN=<随机字符串>   # 用于保护 admin 接口（目前 requireAdmin 是空壳，建议补上）
+```
+
+新增一个 `.env.example` 文件进 repo，作为部署模板。
+
+### 数据库准备
+- **新建 db**：`owcs_prediction_2026`（与 2025 数据隔离）。
+- 如果用 MongoDB Atlas：在原 cluster 里加一个新 database 即可，连接字符串末尾改 database 名。
+- 第一次部署时跑 `node seed.js` 初始化 14 场赛程。
+
+### 部署平台
+现有项目部署形态（推测）是 PaaS（Render/Railway 类）+ MongoDB Atlas。改造后部署流程不变：
+1. 平台 env 里更新 `MONGODB_URI`（指向新 db）+ 新加的环境变量。
+2. 平台自动从 git 拉新代码。
+3. 部署后 SSH/Web Shell 执行 `node seed.js` 初始化。
+
+---
+
+## 8. 实施前最后未决项 (handoff 给开发分支)
+
+1. **MongoDB URI 谁负责**：开发者本地用 localhost，线上由你部署时配 env。代码默认 `mongodb://localhost:27017/owcs_prediction_2026`。
+2. **8 个队伍 Logo**：等你提供（规范见 §5），开发期用文字缩写占位即可。
+3. **OWCS 2026 视觉风格参考**：建议从官方 viewer's guide 抓配色 / 字体灵感：
+   - https://overwatch.blizzard.com/en-us/news/24264002/owcs-2026-stage-1-viewers-guide/
+   - 主题色待定：是否沿用 2025 的紫色，还是切到 OWCS 2026 官方配色？
+4. **GF 准确时间**：Liquipedia 上是 5/24 12:00 JST。如果官方有更新，靠自动同步模块兜底。
+
+---
+
+## 9. 实施 Phase 总览 (开发分支照这个走)
+
+| Phase | 内容 | 预估改动文件数 | 依赖前置 |
+|---|---|---|---|
+| 0 | 项目改名 + db 命名 + .env.example | 3 | 无 |
+| 1 | 彻底删除隐藏成就系统 | 7+ | Phase 0 |
+| 2 | 新赛程 seed + BRACKET_MAP | 2 | Phase 1 |
+| 3 | Bracket 预测后端 (model + routes) | 4 | Phase 2 |
+| 4 | Liquipedia 自动同步模块 | 3 | Phase 2 |
+| 5 | Settle 结算同步刷新 bracket 分 | 1 (admin.js) | Phase 3, 4 |
+| 6 | 排行榜重写（合并榜 + bracket 榜） | 1 (rankings.js) | Phase 3 |
+| 7 | Bracket 树状前端 UI | 3 | Phase 3 |
+| 8 | 视觉升级 + 多时区 + 清理 | 5 | Phase 1, 6, 7 |
+| 9 | Admin 后台清理 + 同步状态面板 | 2 | Phase 4 |
+
+**建议每个 Phase 一个 commit，方便逐步 review。**
+
+---
+
+## 10. 验收测试清单 (开发完后跑一遍)
+
+- [ ] 14 场赛程 seed 后能在 `/api/matches` 完整返回，customId 正确
+- [ ] 删除所有成就相关代码后 server 启动不报错，admin 后台没死链
+- [ ] Bracket 树状 UI 能完整填完 14 场并提交一次，提交后只读
+- [ ] 锁定时间到了之后再提交 → 拒收，错误提示正确
+- [ ] 模拟一场结算后：
+  - 实时预测者得分正确（胜负 +1 / FT2 +0.5 / FT3 +1 / FT4 +2）
+  - 提交过 bracket 的玩家，bracket 那场分数同步刷新
+  - bracket 中预测队伍 ≠ 实际队伍 → 该场 0 分
+- [ ] 合并榜 tiebreaker 链：bracket > 没 bracket、提交早 > 晚、场数对多 > 少、FT4/3/2 比分对 cascade
+- [ ] Bracket 榜只列提交过的人，按 score desc + submitTime asc
+- [ ] 多时区显示：浏览器自动展示 EDT/CDT/PDT 三行
+- [ ] Liquipedia 同步：手动 sync-now 能拉数据 + diff 显示
+- [ ] Liquipedia 自动同步：在窗口期 1 分钟一次，窗口外不轮询
+- [ ] 工厂重置同步清 BracketPrediction collection
+- [ ] 移动端 (iPhone Safari / Android Chrome) 树状 bracket 能正常操作
+
+---
+
+**文档完结，等开发分支 pickup。**
+
 OK 所有需求确认完毕，准备从 **Phase 0** 开干。
