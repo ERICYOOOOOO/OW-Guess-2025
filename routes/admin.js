@@ -4,16 +4,15 @@ const router = express.Router();
 const Match = require('../models/Match');
 const User = require('../models/user');
 const Prediction = require('../models/Prediction');
+const BracketPrediction = require('../models/BracketPrediction');
 const Log = require('../models/Log');
+const syncScheduler = require('../lib/sync-scheduler');
 
 const requireAdmin = (req, res, next) => next();
 
 // =======================================================
 // 🏆 OWCS 2026 Champions Clash 晋级路线 (8 队双败, 14 场)
 // =======================================================
-// 上区第一轮 (M1~M4) 胜者进 UBSF, 败者进 LBR1
-// LBR1 (M5/M6) 胜者交叉进 LBQF (M9/M10)
-// UBSF (M7/M8) 败者交叉进 LBQF
 const BRACKET_MAP = {
     "M1": { win:  { to: "M8",  slot: "teamB" }, lose: { to: "M6", slot: "teamA" } },
     "M2": { win:  { to: "M8",  slot: "teamA" }, lose: { to: "M6", slot: "teamB" } },
@@ -55,65 +54,187 @@ async function logAdminAction(action, target, details) {
     await Log.create({ action, operatorId: "ADMIN", operatorName: "Administrator", target, details });
 }
 
+function scoreBonus(format) {
+    if (format === 'FT4') return 2;
+    if (format === 'FT3') return 1;
+    return 0.5;
+}
+
+// =======================================================
+// 🎯 Bracket 评分: 该场实际参赛队 == 玩家预测两队 (集合相等) 才进入判分
+// =======================================================
+async function settleBracketForMatch(match) {
+    const bps = await BracketPrediction.find({ "picks.matchCustomId": match.customId });
+    const targetSet = new Set([match.teamA.name, match.teamB.name]);
+    const targetA = match.teamA.score;
+    const targetB = match.teamB.score;
+    const winnerA = targetA > targetB;
+
+    for (const bp of bps) {
+        const pick = bp.picks.find(p => p.matchCustomId === match.customId);
+        if (!pick) continue;
+        if (pick.status !== 'pending') continue;
+
+        const userSet = new Set([pick.teamAName, pick.teamBName]);
+        const teamsMatch = (userSet.size === targetSet.size) && [...targetSet].every(t => userSet.has(t));
+
+        if (!teamsMatch) {
+            pick.pointsEarned = 0;
+            pick.isPerfect = false;
+            pick.status = 'invalid';
+            await bp.save();
+            continue;
+        }
+
+        // 队伍对得上：把玩家分数按 (teamAName==match.teamA.name?) 映射
+        const userA = pick.teamAName === match.teamA.name ? pick.teamAScore : pick.teamBScore;
+        const userB = pick.teamAName === match.teamA.name ? pick.teamBScore : pick.teamAScore;
+        const userWinA = userA > userB;
+
+        let pts = 0;
+        let perfect = false;
+        if (userWinA === winnerA) {
+            pts += 1;
+            if (userA === targetA && userB === targetB) {
+                pts += scoreBonus(match.format);
+                perfect = true;
+            }
+        }
+        pick.pointsEarned = pts;
+        pick.isPerfect = perfect;
+        pick.status = 'judged';
+        bp.bracketScore = bp.picks.reduce((sum, p) => sum + (p.pointsEarned || 0), 0);
+        await bp.save();
+
+        // 同步刷 User.bracketScore
+        const u = await User.findById(bp.userId);
+        if (u) {
+            u.bracketScore = bp.bracketScore;
+            u.scoreLog.push({
+                matchId: match._id,
+                reason: `[Bracket ${match.customId}] ${pts > 0 ? (perfect ? '比分对' : '胜负对') : '失败'} (+${pts})`,
+                points: pts,
+                source: 'bracket'
+            });
+            await u.save();
+        }
+    }
+}
+
+// 撤销 bracket 结算 (reset-match 时调用)
+async function rollbackBracketForMatch(match) {
+    const bps = await BracketPrediction.find({ "picks.matchCustomId": match.customId });
+    for (const bp of bps) {
+        const pick = bp.picks.find(p => p.matchCustomId === match.customId);
+        if (!pick) continue;
+        pick.pointsEarned = 0;
+        pick.isPerfect = false;
+        pick.status = 'pending';
+        bp.bracketScore = bp.picks.reduce((sum, p) => sum + (p.pointsEarned || 0), 0);
+        await bp.save();
+        const u = await User.findById(bp.userId);
+        if (u) {
+            u.bracketScore = bp.bracketScore;
+            await u.save();
+        }
+    }
+}
+
+// =======================================================
+// 核心 settle 函数 (HTTP + 自动同步共用)
+// =======================================================
+async function settleMatchCore(matchId, scoreA, scoreB) {
+    const match = await Match.findById(matchId);
+    if (!match) throw new Error('比赛不存在');
+    if (match.status === 'finished') throw new Error('已结算');
+    if (match.teamA.name === 'TBD' || match.teamB.name === 'TBD') {
+        throw new Error('无法结算：参赛队伍尚未确定');
+    }
+
+    match.teamA.score = parseInt(scoreA);
+    match.teamB.score = parseInt(scoreB);
+    match.status = 'finished';
+    await match.save();
+
+    const targetA = match.teamA.score;
+    const targetB = match.teamB.score;
+    const winnerName = targetA > targetB ? match.teamA.name : match.teamB.name;
+    const loserName  = targetA > targetB ? match.teamB.name : match.teamA.name;
+
+    await advanceTeams(match, winnerName, loserName);
+
+    // 实时单场预测结算
+    const preds = await Prediction.find({ matchId });
+    for (let p of preds) {
+        let pts = 0;
+        const userA = parseInt(p.teamAScore);
+        const userB = parseInt(p.teamBScore);
+        const userWinA = userA > userB;
+        const targetWinA = targetA > targetB;
+        let reason = `[${match.customId}]`;
+        p.isPerfect = false;
+
+        if (userWinA === targetWinA) {
+            pts += 1;
+            reason += '胜负对(+1)';
+            if (userA === targetA && userB === targetB) {
+                p.isPerfect = true;
+                const bonus = scoreBonus(match.format);
+                pts += bonus;
+                reason += `,比分对(+${bonus})`;
+            }
+        } else {
+            reason += '预测失败';
+        }
+
+        p.pointsEarned = pts;
+        p.status = 'judged';
+        await p.save();
+        const u = await User.findById(p.userId);
+        if (u) await u.addPoints(pts, reason, match._id, 'realtime');
+    }
+
+    // Bracket 预测结算
+    await settleBracketForMatch(match);
+
+    return { winnerName, loserName };
+}
+
+async function resetMatchCore(matchId) {
+    const match = await Match.findById(matchId);
+    if (!match) throw new Error('比赛不存在');
+    if (match.status !== 'finished') throw new Error('无效操作: 该场未结算');
+
+    // 回滚实时预测分
+    const preds = await Prediction.find({ matchId, status: 'judged' });
+    for (let p of preds) {
+        if (p.pointsEarned > 0) {
+            const user = await User.findById(p.userId);
+            if (user) { user.totalScore -= p.pointsEarned; await user.save(); }
+        }
+        p.pointsEarned = 0;
+        p.status = 'pending';
+        p.isPerfect = false;
+        await p.save();
+    }
+
+    // 回滚 bracket 分
+    await rollbackBracketForMatch(match);
+
+    match.status = 'upcoming';
+    match.teamA.score = 0;
+    match.teamB.score = 0;
+    await match.save();
+}
+
 // ==========================================
 // 1. 结算比赛
 // ==========================================
 router.post('/settle', requireAdmin, async (req, res) => {
     const { matchId, scoreA, scoreB } = req.body;
     try {
+        const { winnerName } = await settleMatchCore(matchId, scoreA, scoreB);
         const match = await Match.findById(matchId);
-        if (!match || match.status === 'finished') return res.status(400).json({ message: 'Error' });
-
-        if (match.teamA.name === 'TBD' || match.teamB.name === 'TBD') {
-            return res.status(400).json({ message: '无法结算：参赛队伍尚未确定' });
-        }
-
-        match.teamA.score = scoreA;
-        match.teamB.score = scoreB;
-        match.status = 'finished';
-        await match.save();
-
-        const winnerName = parseInt(scoreA) > parseInt(scoreB) ? match.teamA.name : match.teamB.name;
-        const loserName  = parseInt(scoreA) > parseInt(scoreB) ? match.teamB.name : match.teamA.name;
-        await advanceTeams(match, winnerName, loserName);
-
-        const preds = await Prediction.find({ matchId });
-        let updateCount = 0;
-
-        const targetA = parseInt(scoreA);
-        const targetB = parseInt(scoreB);
-
-        for (let p of preds) {
-            let pts = 0;
-            const userA = parseInt(p.teamAScore);
-            const userB = parseInt(p.teamBScore);
-            const userWinA = userA > userB;
-            const targetWinA = targetA > targetB;
-            let reason = `[${match.customId}]`;
-
-            p.isPerfect = false;
-
-            if (userWinA === targetWinA) {
-                pts += 1;
-                reason += "胜负对(+1)";
-                if (userA === targetA && userB === targetB) {
-                    p.isPerfect = true;
-                    const bonus = match.format === 'FT4' ? 2 : (match.format === 'FT3' ? 1 : 0.5);
-                    pts += bonus;
-                    reason += `,比分对(+${bonus})`;
-                }
-            } else {
-                reason += "预测失败";
-            }
-
-            p.pointsEarned = pts;
-            p.status = 'judged';
-            await p.save();
-            const u = await User.findById(p.userId);
-            if (u) { await u.addPoints(pts, reason, match._id, 'realtime'); }
-            updateCount++;
-        }
-
         await logAdminAction("ADMIN_SETTLE", `Match ${match.customId}`, { result: `${scoreA}:${scoreB}`, advanced: `${winnerName} -> Next` });
         res.json({ success: true, message: `结算完毕！${winnerName} 已晋级。` });
     } catch (e) { res.status(500).json({ message: e.message }); }
@@ -125,25 +246,8 @@ router.post('/settle', requireAdmin, async (req, res) => {
 router.post('/reset-match', requireAdmin, async (req, res) => {
     const { matchId } = req.body;
     try {
+        await resetMatchCore(matchId);
         const match = await Match.findById(matchId);
-        if (!match || match.status !== 'finished') return res.status(400).json({ message: '无效操作' });
-
-        const preds = await Prediction.find({ matchId, status: 'judged' });
-        for (let p of preds) {
-            if (p.pointsEarned > 0) {
-                const user = await User.findById(p.userId);
-                if (user) { user.totalScore -= p.pointsEarned; await user.save(); }
-            }
-            p.pointsEarned = 0;
-            p.status = 'pending';
-            p.isPerfect = false;
-            await p.save();
-        }
-        match.status = 'upcoming';
-        match.teamA.score = 0;
-        match.teamB.score = 0;
-        await match.save();
-
         await logAdminAction("ADMIN_RESET", `Match ${match.customId}`, { reason: "Rollback" });
         res.json({ success: true, message: '比赛已重置' });
     } catch (e) { res.status(500).json({ message: e.message }); }
@@ -172,11 +276,7 @@ router.post('/manual-score', requireAdmin, async (req, res) => {
 
         const oldScore = u.totalScore;
         u.totalScore += pts;
-
-        if (day > 0) {
-            u.manualAdjustments.push({ day, points: pts, reason });
-        }
-
+        if (day > 0) u.manualAdjustments.push({ day, points: pts, reason });
         u.scoreLog.push({ reason: `[Admin] ${reason}`, points: pts, source: 'manual' });
         await u.save();
 
@@ -206,7 +306,6 @@ router.post('/toggle-lock', requireAdmin, async (req, res) => {
         });
 
         res.json({ success: true, message: match.isExplicitlyLocked ? '已锁定 🔒' : '已解锁 🔓' });
-
     } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
@@ -236,7 +335,7 @@ router.post('/update-time', requireAdmin, async (req, res) => {
 });
 
 // ==========================================
-// 7. 工厂重置
+// 7. 工厂重置 (同步清 BracketPrediction)
 // ==========================================
 router.post('/factory-reset', requireAdmin, async (req, res) => {
     const { confirmation } = req.body;
@@ -245,13 +344,44 @@ router.post('/factory-reset', requireAdmin, async (req, res) => {
     try {
         await User.deleteMany({});
         await Prediction.deleteMany({});
+        await BracketPrediction.deleteMany({});
         await Log.deleteMany({});
         await Match.deleteMany({});
 
         await Log.create({ action: "SYSTEM_RESET", operatorId: "ADMIN", operatorName: "Administrator", target: "ALL DATA" });
         res.json({ success: true, message: '☢️ 系统已重置。请手动运行 seed.js 恢复赛程！' });
-
     } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
+// ==========================================
+// 8. Liquipedia 同步状态 / 控制
+// ==========================================
+router.get('/sync-status', requireAdmin, (req, res) => {
+    res.json(syncScheduler.status());
+});
+
+router.post('/sync-pause', requireAdmin, async (req, res) => {
+    syncScheduler.pause();
+    await logAdminAction("ADMIN_SYNC_PAUSE", "Liquipedia Sync", {});
+    res.json({ success: true, ...syncScheduler.status() });
+});
+
+router.post('/sync-resume', requireAdmin, async (req, res) => {
+    syncScheduler.resume();
+    await logAdminAction("ADMIN_SYNC_RESUME", "Liquipedia Sync", {});
+    res.json({ success: true, ...syncScheduler.status() });
+});
+
+router.post('/sync-now', requireAdmin, async (req, res) => {
+    try {
+        const result = await syncScheduler.manualSync();
+        await logAdminAction("ADMIN_SYNC_NOW", "Liquipedia Sync", { diffs: result.diffs.length });
+        res.json({ success: true, diffs: result.diffs });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
+
 module.exports = router;
+module.exports.settleMatchCore = settleMatchCore;
+module.exports.resetMatchCore = resetMatchCore;
