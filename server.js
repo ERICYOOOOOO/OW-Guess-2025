@@ -20,7 +20,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public'))); // 托管前端页面
 
 // 3. 数据库连接
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/owcs_prediction', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/owcs_prediction_2026', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })

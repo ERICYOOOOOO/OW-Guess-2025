@@ -123,7 +123,6 @@
     <script>
         const API = '/api/admin';
         const headers = { 'Content-Type': 'application/json', 'adminSecret': '123456' };
-        const ALL_ACHIEVEMENTS = ["闪电念", "老开爱炸墙", "reverse sweep", "吃土豆", "再冲一次", "最中幻想", "landon见面交铃铛tp", "冯哥见面三段闪", "闹麻了", "以父之名", "新皇后街", "反向木子", "P>L", "西巴堡", "喜忧参半", "来晚了", "难兄难弟"];
 
         document.addEventListener('DOMContentLoaded', loadMatches);
 
@@ -242,23 +241,28 @@
         async function toggleLock(id){ const res=await fetch(API+'/toggle-lock',{method:'POST',headers,body:JSON.stringify({matchId:id})}); if((await res.json()).success) loadMatches(); }
         async function factoryReset(){ if(prompt("输入 DELETE 确认:")==='DELETE'){ await fetch(API+'/factory-reset',{method:'POST',headers,body:JSON.stringify({confirmation:'DELETE'})}); location.reload(); } }
         async function searchUsers(){ const q=document.getElementById('user-search').value; const res=await fetch(API+`/search-users?q=${q}`,{headers}); renderUsers(await res.json()); }
-        function renderUsers(users){ 
+        function renderUsers(users){
             const c=document.getElementById('user-results'); c.innerHTML=users.map(u=>`
             <div class="user-row">
-                <div class="user-header"><div><span style="font-size:1.1rem; font-weight:bold;">${u.nickname}</span> (${u.totalScore})</div><button onclick="openManual('${u._id}','${u.nickname}')">⚡ 修正</button></div>
-                <div style="background:#f4f4f4; padding:8px; border-radius:6px;">
-                    <div class="user-achievements">
-                        ${u.achievements.map(a => `<span class="ach-tag">${a.name}<span class="ach-remove" onclick="manageAch('${u._id}', 'remove', '${a.name}')">×</span></span>`).join('') || '<span style="color:#999;font-size:0.8rem">无成就</span>'}
-                        <div style="margin-left:auto; display:flex;">
-                            <select id="ach-select-${u._id}">${ALL_ACHIEVEMENTS.map(n => `<option>${n}</option>`)}</select>
-                            <button onclick="addAch('${u._id}')" style="margin-left:5px;">+</button>
-                        </div>
+                <div class="user-header">
+                    <div>
+                        <span style="font-size:1.1rem; font-weight:bold;">${u.nickname}</span>
+                        <span style="color:#666; font-size:0.85rem;">实时 ${u.totalScore||0} / Bracket ${u.bracketScore||0}</span>
+                    </div>
+                    <div>
+                        <button onclick="viewBracket('${u._id}','${u.nickname}')" style="margin-right:5px;">🎯 看Bracket</button>
+                        <button onclick="openManual('${u._id}','${u.nickname}')">⚡ 修正</button>
                     </div>
                 </div>
-            </div>`).join(''); 
+            </div>`).join('');
         }
-        async function manageAch(uid,act,name){ if(confirm(act)) { await fetch(API+'/manage-achievement',{method:'POST',headers,body:JSON.stringify({userId:uid,action:act,achievementName:name})}); searchUsers(); } }
-        function addAch(id) { manageAch(id, 'add', document.getElementById(`ach-select-${id}`).value); }
+        async function viewBracket(uid, name){
+            const res = await fetch(`/api/bracket/my/${uid}`);
+            const data = await res.json();
+            if (!data || !data.picks || data.picks.length === 0) { alert(`${name} 未提交 Bracket`); return; }
+            const lines = data.picks.map(p => `${p.matchCustomId}: ${p.teamAName} ${p.teamAScore}-${p.teamBScore} ${p.teamBName} → ${p.predictedWinner}`);
+            alert(`${name} 的 Bracket\n提交时间: ${new Date(data.submittedAt).toLocaleString()}\n当前分: ${data.bracketScore}\n\n${lines.join('\n')}`);
+        }
         function openManual(id,name){ document.getElementById('manual-overlay').style.display='block'; document.getElementById('manual-form').style.display='block'; document.getElementById('target-user-name').innerText=name; document.getElementById('target-user-id').value=id; }
         function closeManual(){ document.getElementById('manual-overlay').style.display='none'; document.getElementById('manual-form').style.display='none'; }
         async function submitManualScore(){ 

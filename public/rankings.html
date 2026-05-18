@@ -133,24 +133,10 @@
 
     <div class="rank-tabs">
         <button class="tab-btn active" onclick="switchTab('total')">
-            <i class="fas fa-crown"></i> 总积分榜
+            <i class="fas fa-crown"></i> 合并榜
         </button>
-        
-        <div class="day-selector-wrapper">
-            <button class="tab-btn" onclick="switchTab('daily')">
-                <i class="fas fa-calendar-day"></i> 今日排行
-            </button>
-            <select id="rank-day-select" onchange="if(document.querySelectorAll('.tab-btn')[1].classList.contains('active')) switchTab('daily')">
-                <option value="1">Day 1 (11.26)</option>
-                <option value="2">Day 2 (11.27)</option>
-                <option value="3">Day 3 (11.28)</option>
-                <option value="4">Day 4 (11.29)</option>
-                <option value="5">Day 5 (11.30)</option>
-            </select>
-        </div>
-
-        <button class="tab-btn" onclick="switchTab('achievements')">
-            <i class="fas fa-medal"></i> 成就榜
+        <button class="tab-btn" onclick="switchTab('bracket')">
+            <i class="fas fa-sitemap"></i> Bracket 榜
         </button>
     </div>
 
