@@ -50,6 +50,7 @@ const state = {
     locked: false,
     submitted: false,
     lockTime: null,
+    lockMode: 'auto',
     serverTimes: {}      // id -> ISO startTime
 };
 
@@ -291,12 +292,15 @@ async function init() {
 
         state.locked = !!tpl.locked;
         state.lockTime = tpl.lockTime;
+        state.lockMode = tpl.lockMode || 'auto';
         tpl.matches.forEach(m => { state.serverTimes[m.customId] = m.startTime; });
 
         const banner = document.getElementById('lock-banner');
         if (state.locked) {
             banner.className = 'lock-banner locked';
-            banner.innerText = '🔒 Bracket 已锁定 (M1 已开赛)，仅查看模式';
+            banner.innerText = state.lockMode === 'force-lock'
+                ? '🔒 Bracket 已被管理员锁定，仅查看模式'
+                : '🔒 Bracket 已锁定 (M1 已开赛)，仅查看模式';
         } else {
             const lt = new Date(tpl.lockTime);
             const fmt = (tz) => new Intl.DateTimeFormat('zh-CN', {

@@ -7,9 +7,24 @@ const Match = require('../models/Match');
 const User = require('../models/user');
 const BracketPrediction = require('../models/BracketPrediction');
 const Log = require('../models/Log');
+const Setting = require('../models/Setting');
 
 // 文档 §1: M1 第一场为 2026-05-22T03:00:00Z, bracket 锁定时间 = M1 开赛
 const BRACKET_LOCK_TIME = new Date('2026-05-22T03:00:00Z');
+
+// 全局 bracket 锁定模式：
+//   'auto'          → 跟随 BRACKET_LOCK_TIME (默认)
+//   'force-lock'    → 强制锁定 (即使未到时间)
+//   'force-unlock'  → 强制开放 (即使已过时间)
+async function getBracketLockState() {
+    const mode = await Setting.get('bracketLockMode', 'auto');
+    const dateLocked = new Date() >= BRACKET_LOCK_TIME;
+    let locked;
+    if (mode === 'force-lock') locked = true;
+    else if (mode === 'force-unlock') locked = false;
+    else locked = dateLocked;
+    return { mode, locked, dateLocked, lockTime: BRACKET_LOCK_TIME };
+}
 
 const MATCH_ORDER = ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','UBF','LBF','GF'];
 
@@ -44,9 +59,11 @@ router.get('/template', async (req, res) => {
             teamA: m.teamA,
             teamB: m.teamB
         }));
+        const lockState = await getBracketLockState();
         res.json({
             lockTime: BRACKET_LOCK_TIME.toISOString(),
-            locked: new Date() >= BRACKET_LOCK_TIME,
+            locked: lockState.locked,
+            lockMode: lockState.mode,
             matches: tpl
         });
     } catch (e) {
@@ -60,8 +77,12 @@ router.get('/template', async (req, res) => {
 // =======================================================
 router.post('/submit', async (req, res) => {
     try {
-        if (new Date() >= BRACKET_LOCK_TIME) {
-            return res.status(403).json({ message: 'Bracket 已锁定 (M1 已开赛)，无法再提交' });
+        const lockState = await getBracketLockState();
+        if (lockState.locked) {
+            const reason = lockState.mode === 'force-lock'
+                ? 'Bracket 已被管理员手动锁定，无法再提交'
+                : 'Bracket 已锁定 (M1 已开赛)，无法再提交';
+            return res.status(403).json({ message: reason });
         }
 
         const { userId, picks } = req.body;
@@ -157,4 +178,4 @@ router.get('/my/:userId', async (req, res) => {
     }
 });
 
-module.exports = { router, BRACKET_LOCK_TIME, MATCH_ORDER, getFormat };
+module.exports = { router, BRACKET_LOCK_TIME, MATCH_ORDER, getFormat, getBracketLockState };

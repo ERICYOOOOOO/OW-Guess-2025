@@ -6,7 +6,9 @@ const User = require('../models/user');
 const Prediction = require('../models/Prediction');
 const BracketPrediction = require('../models/BracketPrediction');
 const Log = require('../models/Log');
+const Setting = require('../models/Setting');
 const syncScheduler = require('../lib/sync-scheduler');
+const { getBracketLockState } = require('./bracket');
 
 const requireAdmin = (req, res, next) => next();
 
@@ -411,6 +413,100 @@ router.post('/sync-now', requireAdmin, async (req, res) => {
         const result = await syncScheduler.manualSync();
         await logAdminAction("ADMIN_SYNC_NOW", "Liquipedia Sync", { diffs: result.diffs.length });
         res.json({ success: true, diffs: result.diffs });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
+
+// ==========================================
+// 9. 单条同步差异应用 (admin 逐条选择)
+// ==========================================
+router.post('/apply-diff', requireAdmin, async (req, res) => {
+    const { customId, field, value } = req.body || {};
+    const allowedFields = ['startTime', 'teamA.score', 'teamB.score'];
+    if (!customId || !allowedFields.includes(field)) {
+        return res.status(400).json({ message: '非法字段或缺少 customId' });
+    }
+    try {
+        const match = await Match.findOne({ customId });
+        if (!match) return res.status(404).json({ message: '比赛不存在' });
+
+        let before;
+        if (field === 'startTime') {
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return res.status(400).json({ message: '时间格式非法' });
+            before = match.startTime;
+            match.startTime = d;
+        } else if (field === 'teamA.score') {
+            const n = parseInt(value, 10);
+            if (!Number.isFinite(n) || n < 0) return res.status(400).json({ message: '比分非法' });
+            before = match.teamA.score;
+            match.teamA.score = n;
+        } else if (field === 'teamB.score') {
+            const n = parseInt(value, 10);
+            if (!Number.isFinite(n) || n < 0) return res.status(400).json({ message: '比分非法' });
+            before = match.teamB.score;
+            match.teamB.score = n;
+        }
+        await match.save();
+        await logAdminAction("ADMIN_SYNC_APPLY_DIFF", `Match ${match.customId}`, { field, before, after: value });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
+
+// ==========================================
+// 10. 删除玩家 (含其预测 + bracket + 日志)
+// ==========================================
+router.post('/delete-user', requireAdmin, async (req, res) => {
+    const { userId, confirmNickname } = req.body || {};
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: '玩家不存在' });
+        if (confirmNickname !== user.nickname) {
+            return res.status(400).json({ message: '确认昵称不匹配' });
+        }
+
+        const [preds, bps] = await Promise.all([
+            Prediction.deleteMany({ userId }),
+            BracketPrediction.deleteMany({ userId })
+        ]);
+        await User.deleteOne({ _id: userId });
+
+        await logAdminAction("ADMIN_DELETE_USER", `User ${user.nickname}`, {
+            userId: user._id.toString(),
+            predictionsDeleted: preds.deletedCount,
+            bracketsDeleted: bps.deletedCount
+        });
+        res.json({ success: true, message: `已删除 ${user.nickname}` });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
+
+// ==========================================
+// 11. Bracket 提交锁定开关
+// ==========================================
+router.get('/bracket-lock', requireAdmin, async (req, res) => {
+    try {
+        const state = await getBracketLockState();
+        res.json(state);
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
+
+router.post('/bracket-lock', requireAdmin, async (req, res) => {
+    const { mode } = req.body || {};
+    if (!['auto', 'force-lock', 'force-unlock'].includes(mode)) {
+        return res.status(400).json({ message: 'mode 必须是 auto / force-lock / force-unlock' });
+    }
+    try {
+        await Setting.set('bracketLockMode', mode);
+        await logAdminAction("ADMIN_BRACKET_LOCK", "Bracket Submit", { mode });
+        const state = await getBracketLockState();
+        res.json({ success: true, ...state });
     } catch (e) {
         res.status(500).json({ message: e.message });
     }
