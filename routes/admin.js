@@ -293,8 +293,15 @@ router.post('/reset-match', requireAdmin, async (req, res) => {
 // 3. 搜索用户
 // ==========================================
 router.get('/search-users', requireAdmin, async (req, res) => {
-    const q = req.query.q;
-    const users = await User.find({ nickname: new RegExp(q, 'i') }).select('nickname totalScore bracketScore').limit(10);
+    const q = (req.query.q || '').trim();
+    const lim = Math.min(parseInt(req.query.limit, 10) || 10, 1000);
+    // 转义正则元字符防止崩溃
+    const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const filter = safeQ ? { nickname: new RegExp(safeQ, 'i') } : {};
+    const users = await User.find(filter)
+        .select('nickname totalScore bracketScore bracketSubmittedAt')
+        .sort({ nickname: 1 })
+        .limit(lim);
     res.json(users);
 });
 
@@ -486,7 +493,38 @@ router.post('/delete-user', requireAdmin, async (req, res) => {
 });
 
 // ==========================================
-// 11. Bracket 提交锁定开关
+// 11. 清空指定玩家的 Bracket (可重交)
+// ==========================================
+router.post('/reset-bracket', requireAdmin, async (req, res) => {
+    const { userId, confirmNickname } = req.body || {};
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: '玩家不存在' });
+        if (confirmNickname !== user.nickname) {
+            return res.status(400).json({ message: '确认昵称不匹配' });
+        }
+
+        const del = await BracketPrediction.deleteMany({ userId });
+        const oldBracketScore = user.bracketScore;
+        user.bracketScore = 0;
+        user.bracketSubmittedAt = undefined;
+        // 同步清掉 scoreLog 里 source='bracket' 的条目, 避免历史残留
+        user.scoreLog = user.scoreLog.filter(s => s.source !== 'bracket');
+        await user.save();
+
+        await logAdminAction("ADMIN_RESET_BRACKET", `User ${user.nickname}`, {
+            userId: user._id.toString(),
+            bracketScoreBefore: oldBracketScore,
+            deletedBrackets: del.deletedCount
+        });
+        res.json({ success: true, message: `已清空 ${user.nickname} 的 Bracket` });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
+
+// ==========================================
+// 12. Bracket 提交锁定开关
 // ==========================================
 router.get('/bracket-lock', requireAdmin, async (req, res) => {
     try {

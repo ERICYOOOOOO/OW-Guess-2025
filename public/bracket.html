@@ -148,6 +148,54 @@
             margin-top: 4px;
             min-height: 1em;
         }
+        /* === 结算后特效 === */
+        @keyframes bracket-rainbow-glow {
+            0%   { border-color: #ff0000; box-shadow: 0 0 16px rgba(255, 0, 0, 0.55); }
+            15%  { border-color: #ff00ff; box-shadow: 0 0 16px rgba(255, 0, 255, 0.55); }
+            30%  { border-color: #0000ff; box-shadow: 0 0 16px rgba(0, 0, 255, 0.55); }
+            45%  { border-color: #00ffff; box-shadow: 0 0 16px rgba(0, 255, 255, 0.55); }
+            60%  { border-color: #00ff00; box-shadow: 0 0 16px rgba(0, 255, 0, 0.55); }
+            75%  { border-color: #ffff00; box-shadow: 0 0 16px rgba(255, 255, 0, 0.55); }
+            90%  { border-color: #ff8000; box-shadow: 0 0 16px rgba(255, 128, 0, 0.55); }
+            100% { border-color: #ff0000; box-shadow: 0 0 16px rgba(255, 0, 0, 0.55); }
+        }
+        .bracket-card.status-correct {
+            border-left: 5px solid var(--status-correct);
+            background: linear-gradient(to right, #f0fdf4, #ffffff);
+        }
+        .bracket-card.status-wrong {
+            border-left: 5px solid var(--status-wrong);
+            background: linear-gradient(to right, #fef2f2, #ffffff);
+            opacity: 0.85;
+        }
+        .bracket-card.status-perfect {
+            animation: bracket-rainbow-glow 3s linear infinite;
+            border-width: 2px;
+            border-style: solid;
+            background: linear-gradient(135deg, #fff9fc, #fffbe6);
+            transform: scale(1.015);
+            position: relative;
+            z-index: 2;
+        }
+        .bracket-card.status-invalid {
+            border-left: 5px solid #9ca3af;
+            background: #fafafa;
+            opacity: 0.7;
+        }
+        .bc-result {
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: center;
+            background: rgba(0,0,0,0.03);
+        }
+        .bc-result.correct { background: rgba(34,197,94,0.10); color: #15803d; }
+        .bc-result.wrong   { background: rgba(239,68,68,0.10); color: #b91c1c; }
+        .bc-result.perfect { background: linear-gradient(90deg, #fff5d6, #ffe9f0); color: #b8860b; }
+        .bc-result.invalid { background: rgba(156,163,175,0.15); color: #4b5563; }
+        .bc-result .real-score { color: var(--accent-purple); font-weight: 800; }
         .submit-bar {
             position: sticky;
             bottom: 14px;
