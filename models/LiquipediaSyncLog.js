@@ -16,6 +16,8 @@ const syncLogSchema = new mongoose.Schema({
     }],
     // 触发自动结算的比赛 ID
     autoSettled: [String],
+    // 触发自动锁定 (upcoming → locked) 的比赛 ID
+    autoLocked: [String],
     timestamp: { type: Date, default: Date.now, index: true }
 });
 

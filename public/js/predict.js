@@ -121,12 +121,15 @@ function createMatchCard(match, pred, matchStats) {
 
     // 提示语逻辑
     let noticeHtml = '';
+    const isLive = match.status === 'locked';   // Liquipedia 同步触发的"进行中"锁定
     if (isTBD) {
         noticeHtml = '<div class="tbd-notice">🔒 队伍待定</div>';
-    } 
+    }
     else if (isAdminLocked && !isFinished) {
-        // 只有在“被管理员锁了”且“还没出结果”时，才显示这个红字
         noticeHtml = '<div class="tbd-notice" style="color:#d9534f;">🔒 管理员暂停预测</div>';
+    }
+    else if (isLive && !isFinished) {
+        noticeHtml = '<div class="tbd-notice" style="color:#d9534f;">🔴 比赛进行中 · 预测已锁</div>';
     }
 
     // === 生成支持率条 HTML ===

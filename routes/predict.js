@@ -19,6 +19,8 @@ router.post('/', async (req, res) => {
         const match = await Match.findById(matchId);
         if (!match) return res.status(404).json({ message: '比赛不存在' });
         if (match.isExplicitlyLocked) return res.status(403).json({ message: '该比赛已被管理员暂停预测 🔒' });
+        if (match.status === 'finished') return res.status(403).json({ message: '比赛已结束，无法预测' });
+        if (match.status === 'locked') return res.status(403).json({ message: '比赛进行中，预测已锁定 🔴' });
         if (new Date() >= new Date(match.startTime)) return res.status(403).json({ message: '比赛已开始，通道已关闭' });
         if (!validateScore(match.format, parseInt(teamAScore), parseInt(teamBScore))) return res.status(400).json({ message: '比分无效' });
 
