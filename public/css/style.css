@@ -3,88 +3,148 @@
     /* 主色调：亮粉色 (参考杭州闪电/蝾螈)  */
     --primary-pink: #FF69B4;       /* Hot Pink */
     --light-pink: #FFB6C1;         /* Light Pink for backgrounds */
-    --soft-pink-bg: #FFF0F5;       /* Lavender Blush (极淡粉，用于大背景) */
-    
+    --soft-pink-bg: #FFFAFC;       /* 极淡粉白 (近白带粉调) */
+
     /* 点缀色：深紫色 (参考Team CC/狼)  */
     --accent-purple: #4B0082;      /* Indigo/Deep Purple */
     --deep-purple-bg: #2E1A47;     /* 用于深色卡片背景 */
 
     /* 辅助色 */
     --vibrant-orange: #FFA500;     /* 活力橙 (用于强调或特殊按钮)  */
-    --text-dark: #333333;          /* 深色文字 */
+    --text-dark: #1c1c22;          /* 深色文字 (略冷,更现代) */
+    --text-muted: #6b7280;         /* 灰色辅助文字 */
     --text-light: #FFFFFF;         /* 浅色文字 */
-    
-    /* 状态色 [cite: 118] */
-    --status-correct: #32CD32;     /* 绿色 - 猜对胜负 */
-    --status-wrong: #FF4500;       /* 红色 - 猜错 */
-    --status-perfect: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); /* 彩虹色 - 完全正确 */
+    --border-soft: #ececf0;        /* 柔和分隔线 */
+
+    /* 现代化 surface */
+    --surface: #ffffff;
+    --surface-tint: #fff5f9;       /* 卡片悬浮态/侧条 */
+
+    /* 阴影系统 */
+    --shadow-sm: 0 1px 2px rgba(28,28,34,0.04), 0 1px 3px rgba(28,28,34,0.03);
+    --shadow-md: 0 4px 12px rgba(28,28,34,0.06), 0 2px 4px rgba(28,28,34,0.04);
+    --shadow-lg: 0 12px 28px rgba(28,28,34,0.08), 0 6px 10px rgba(28,28,34,0.04);
+    --shadow-pink: 0 8px 20px rgba(255,105,180,0.18);
+
+    /* 圆角系统 */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+
+    /* 状态色 */
+    --status-correct: #22c55e;     /* 绿色 - 猜对胜负 (更现代的 green) */
+    --status-wrong: #ef4444;       /* 红色 - 猜错 (更现代的 red) */
+    --status-perfect: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
 }
 
+* { box-sizing: border-box; }
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 现代无衬线字体 */
-    background-color: var(--soft-pink-bg); /* 整个网页背景是嫩粉色 */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--soft-pink-bg);
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(255,105,180,0.06), transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(75,0,130,0.04), transparent 40%);
+    background-attachment: fixed;
     color: var(--text-dark);
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* 按钮通用样式：亮粉底，深紫字，或者深紫底，亮粉字 */
+/* 按钮通用样式：粉底白字 */
 .btn-primary {
     background-color: var(--primary-pink);
     color: white;
-    border: 2px solid var(--accent-purple);
+    border: 2px solid var(--primary-pink);
     padding: 10px 20px;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
 }
 
 .btn-primary:hover {
     background-color: var(--accent-purple);
-    color: var(--primary-pink);
+    border-color: var(--accent-purple);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 /* --- 导航栏 --- */
 .navbar {
-    background-color: var(--primary-pink);
-    padding: 1rem 2rem;
+    background: linear-gradient(135deg, var(--primary-pink) 0%, #ff4fa3 100%);
+    padding: 0.9rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: saturate(180%) blur(8px);
 }
 
 .logo {
     color: white;
     font-weight: 900;
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     letter-spacing: 2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .menu a {
-    color: white;
+    color: rgba(255,255,255,0.92);
     text-decoration: none;
-    margin: 0 15px;
-    font-weight: bold;
-    font-size: 1.1rem;
+    margin: 0 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.menu a:hover {
+    background: rgba(255,255,255,0.18);
+    color: white;
 }
 
 .menu a.active {
-    border-bottom: 3px solid var(--accent-purple);
+    background: rgba(255,255,255,0.22);
+    color: white;
+    border-bottom: 2px solid white;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 /* --- Hero Section (欢迎区) --- */
 .hero {
-    background: linear-gradient(135deg, var(--light-pink) 0%, var(--soft-pink-bg) 100%);
+    background:
+        radial-gradient(ellipse at top, rgba(255,182,193,0.45), transparent 60%),
+        linear-gradient(180deg, var(--surface) 0%, var(--soft-pink-bg) 100%);
     text-align: center;
-    padding: 4rem 1rem;
-    border-bottom: 5px solid var(--primary-pink);
+    padding: 4.5rem 1.5rem 5rem;
+    border-bottom: 1px solid var(--border-soft);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--primary-pink), var(--accent-purple), var(--primary-pink), transparent);
 }
 
 .hero h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
     color: var(--text-dark);
+    font-weight: 900;
+    letter-spacing: -0.5px;
 }
 
 .intro-text {
@@ -98,30 +158,47 @@ body {
 .hero-buttons {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 14px;
 }
 
 .btn-lg {
-    padding: 15px 40px;
-    font-size: 1.2rem;
-    border-radius: 50px;
+    padding: 13px 32px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: var(--radius-pill);
     text-decoration: none;
     display: inline-block;
+    transition: all 0.2s ease;
+    letter-spacing: 0.3px;
+}
+
+.btn-primary.btn-lg {
+    box-shadow: var(--shadow-pink);
+}
+
+.btn-primary.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(255,105,180,0.32);
 }
 
 .btn-secondary {
     background-color: var(--accent-purple);
     color: white;
-    border: 2px solid var(--primary-pink);
-    padding: 15px 40px;
-    font-size: 1.2rem;
-    border-radius: 50px;
+    border: 2px solid var(--accent-purple);
+    padding: 13px 32px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: var(--radius-pill);
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    letter-spacing: 0.3px;
 }
 .btn-secondary:hover {
     background-color: white;
     color: var(--accent-purple);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 /* --- Rules Grid (规则卡片) --- */
@@ -145,24 +222,55 @@ body {
 }
 
 .rule-card {
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    border-top: 5px solid var(--accent-purple);
-    transition: transform 0.2s;
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-soft);
+    border-top: 3px solid var(--primary-pink);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .rule-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
 }
 
 .rule-card h3 {
-    color: var(--primary-pink);
+    color: var(--text-dark);
     margin-top: 0;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-soft);
+    padding-bottom: 12px;
+    font-weight: 700;
+    font-size: 1.1rem;
 }
+
+.rule-card h3 i {
+    color: var(--primary-pink);
+    margin-right: 6px;
+}
+
+.rule-card p {
+    line-height: 1.65;
+    color: #444;
+    margin: 8px 0;
+}
+
+.rule-card code {
+    background: var(--surface-tint);
+    color: var(--accent-purple);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+.rule-card a {
+    color: var(--primary-pink);
+    text-decoration: none;
+    font-weight: 600;
+}
+.rule-card a:hover { text-decoration: underline; }
 
 .highlight {
     color: var(--vibrant-orange);
@@ -176,17 +284,23 @@ body {
 
 footer {
     text-align: center;
-    padding: 20px;
-    background-color: var(--deep-purple-bg);
-    color: white;
-    margin-top: 3rem;
+    padding: 28px 20px;
+    background: var(--deep-purple-bg);
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(255,105,180,0.08), transparent 40%),
+        radial-gradient(circle at 80% 50%, rgba(255,105,180,0.05), transparent 40%);
+    color: rgba(255,255,255,0.85);
+    margin-top: 4rem;
+    font-size: 0.9rem;
 }
 
 /* --- 登录弹窗 (Modal) --- */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(46, 26, 71, 0.9); /* 深紫背景不透明度 */
+    background: rgba(28,28,34,0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -194,27 +308,47 @@ footer {
 }
 
 .modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 20px;
+    background: var(--surface);
+    padding: 2.2rem 2rem;
+    border-radius: var(--radius-lg);
     width: 90%;
-    max-width: 400px;
+    max-width: 420px;
     text-align: center;
-    border: 4px solid var(--primary-pink);
-    box-shadow: 0 0 20px var(--primary-pink);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-lg), 0 0 0 4px rgba(255,105,180,0.12);
+}
+
+.modal-content h2 {
+    color: var(--text-dark);
+    margin-top: 0;
+    font-weight: 800;
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
     text-align: left;
+}
+.form-group label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 6px;
 }
 .form-group input {
     width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
+    padding: 11px 14px;
+    margin-top: 0;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-sm);
     font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-pink);
+    box-shadow: 0 0 0 3px rgba(255,105,180,0.15);
 }
 .error-msg { color: var(--status-wrong); margin-top: 10px; }
 .hidden { display: none !important; }
@@ -222,31 +356,59 @@ footer {
 /* --- 预测页通用 --- */
 .page-header {
     text-align: center;
-    margin: 20px 0;
+    margin: 28px 16px 24px;
     color: var(--text-dark);
 }
-.badge {
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    color: white;
-    margin: 0 5px;
+.page-header h1 {
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0 0 8px;
+    letter-spacing: -0.3px;
 }
-.badge.pending { background: #999; }
+.page-header p {
+    color: var(--text-muted);
+    max-width: 720px;
+    margin: 0 auto 16px;
+    line-height: 1.6;
+}
+.legend {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    display: inline-block;
+    letter-spacing: 0.3px;
+}
+.badge.pending { background: #9ca3af; }
 .badge.correct { background: var(--status-correct); }
 .badge.wrong { background: var(--status-wrong); }
 .badge.perfect { background: var(--status-perfect); }
 
 /* --- 比赛卡片 (Match Card) 通用样式 --- */
 .match-card {
-    background: white;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    border-left: 5px solid #ddd; /* 默认灰色条 */
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-soft);
+    border-left: 4px solid #d4d4dc;
     position: relative;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+}
+
+.match-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: rgba(255,105,180,0.25);
 }
 
 /* 状态颜色边框 */
@@ -318,14 +480,20 @@ footer {
     gap: 10px;
 }
 .score-input {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     text-align: center;
     font-size: 1.2rem;
-    font-weight: bold;
-    border: 2px solid var(--accent-purple);
-    border-radius: 8px;
+    font-weight: 800;
+    border: 1.5px solid var(--accent-purple);
+    border-radius: var(--radius-sm);
     color: var(--accent-purple);
+    transition: all 0.2s;
+}
+.score-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255,105,180,0.2);
+    border-color: var(--primary-pink);
 }
 .score-input:disabled {
     background: #f0f0f0;
@@ -337,13 +505,21 @@ footer {
 .btn-submit-predict {
     display: block;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 12px;
     background: var(--accent-purple);
     color: white;
     border: none;
-    padding: 5px;
-    border-radius: 4px;
+    padding: 9px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+.btn-submit-predict:hover:not(:disabled) {
+    background: var(--primary-pink);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 .btn-submit-predict:disabled { background: #ccc; cursor: not-allowed; }
 
@@ -360,13 +536,23 @@ footer {
 /* 每一天的标题样式 */
 .day-header {
     color: var(--accent-purple);
-    border-bottom: 2px solid var(--primary-pink);
-    margin-top: 30px;
-    margin-bottom: 15px;
-    padding-bottom: 5px;
-    font-size: 1.5rem;
+    border-bottom: 1px solid var(--border-soft);
+    margin-top: 36px;
+    margin-bottom: 18px;
+    padding: 0 0 10px;
+    font-size: 1.35rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    position: relative;
+}
+.day-header::before {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 40px; height: 3px;
+    background: linear-gradient(90deg, var(--primary-pink), var(--accent-purple));
+    border-radius: 2px;
 }
 
 /* === 新增：占位符比赛 (TBD) 锁定样式  === */
@@ -397,33 +583,39 @@ footer {
 
 /* 上下按钮 */
 .score-btn {
-    width: 30px;
-    height: 20px;
-    background: var(--light-pink);
-    border: none;
+    width: 32px;
+    height: 22px;
+    background: var(--surface-tint);
+    border: 1px solid var(--border-soft);
     color: var(--accent-purple);
     cursor: pointer;
     font-size: 12px;
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.15s;
 }
-.score-btn:hover { background: var(--primary-pink); color: white; }
-.score-btn:disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+.score-btn:hover { background: var(--primary-pink); color: white; border-color: var(--primary-pink); }
+.score-btn:disabled { background: #f5f5f7; color: #c4c4cb; cursor: not-allowed; border-color: var(--border-soft); }
 
 /* 中间的数字 */
 .score-display {
-    width: 40px;
-    height: 40px;
-    line-height: 40px;
+    width: 42px;
+    height: 42px;
+    line-height: 42px;
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 900;
     color: var(--accent-purple);
-    background: white;
-    border: 2px solid var(--light-pink);
-    border-radius: 8px;
+    background: var(--surface);
+    border: 1.5px solid var(--light-pink);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+}
+.score-display:hover {
+    border-color: var(--primary-pink);
+    box-shadow: var(--shadow-sm);
 }
 
 /* =========================================
