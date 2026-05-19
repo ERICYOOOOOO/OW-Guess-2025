@@ -13,7 +13,7 @@ const TEAM_FULL_NAMES = {
     "TBD": "TBD"
 };
 
-// EDT / CDT / PDT 三时区显示工具
+// 北京 / 美西 / 美东 三时区显示工具
 function formatThreeTZ(iso) {
     if (!iso) return '';
     const d = new Date(iso);
@@ -21,7 +21,7 @@ function formatThreeTZ(iso) {
         timeZone: tz, month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false
     }).format(d);
-    return `EDT ${fmt('America/New_York')} · CDT ${fmt('America/Chicago')} · PDT ${fmt('America/Los_Angeles')}`;
+    return `北京 ${fmt('Asia/Shanghai')} · 美西 ${fmt('America/Los_Angeles')} · 美东 ${fmt('America/New_York')}`;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
