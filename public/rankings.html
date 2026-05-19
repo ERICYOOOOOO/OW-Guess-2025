@@ -13,62 +13,80 @@
         /* 排行榜页面专用样式 */
         .rank-header {
             text-align: center;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, var(--soft-pink-bg) 0%, #fff 100%);
-            border-bottom: 5px solid var(--primary-pink);
-            margin-bottom: 30px;
+            padding: 48px 20px 40px;
+            background:
+                radial-gradient(ellipse at top, rgba(255,182,193,0.4), transparent 60%),
+                linear-gradient(180deg, var(--surface) 0%, var(--soft-pink-bg) 100%);
+            border-bottom: 1px solid var(--border-soft);
+            margin-bottom: 32px;
+            position: relative;
+        }
+        .rank-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary-pink), var(--accent-purple), var(--primary-pink), transparent);
+        }
+        .rank-header h1 {
+            font-weight: 800;
+            font-size: 2rem;
+            margin: 0 0 8px;
+            letter-spacing: -0.3px;
         }
 
         .rank-tabs {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 0 10px;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding: 0 16px;
         }
 
         .tab-btn {
-            background: white;
-            border: 2px solid var(--primary-pink);
+            background: var(--surface);
+            border: 1.5px solid var(--primary-pink);
             color: var(--primary-pink);
-            padding: 10px 25px;
-            border-radius: 50px;
+            padding: 9px 22px;
+            border-radius: var(--radius-pill);
             cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-sm);
         }
 
-        .tab-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(255, 105, 180, 0.2); }
-        .tab-btn.active { background: var(--primary-pink); color: white; box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4); }
+        .tab-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .tab-btn.active { background: var(--primary-pink); color: white; box-shadow: var(--shadow-pink); }
 
         .day-selector-wrapper {
             display: flex;
             align-items: center;
-            gap: 5px;
-            background: white;
-            padding: 5px;
-            border-radius: 50px;
-            border: 1px solid #eee;
+            gap: 6px;
+            background: var(--surface);
+            padding: 6px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-sm);
         }
 
         #rank-day-select {
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 2px solid var(--accent-purple);
+            padding: 8px 16px;
+            border-radius: var(--radius-pill);
+            border: 1.5px solid var(--accent-purple);
             color: var(--accent-purple);
-            font-weight: bold;
+            font-weight: 700;
             outline: none;
             cursor: pointer;
-            background-color: #fdfdfd;
+            background-color: var(--surface);
+            transition: all 0.15s;
         }
-        
-        #rank-day-select:hover { background-color: #f0f0f0; }
+
+        #rank-day-select:hover { background-color: var(--surface-tint); }
 
         /* 表格容器样式 */
         .leaderboard-table {
@@ -76,16 +94,25 @@
             max-width: 900px;
             margin: 0 auto;
             border-collapse: collapse;
-            background: white;
-            border-radius: 15px;
+            background: var(--surface);
+            border-radius: var(--radius-md);
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-soft);
         }
 
-        .leaderboard-table th { background: var(--accent-purple); color: white; padding: 18px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
-        .leaderboard-table td { padding: 15px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #444; }
+        .leaderboard-table th {
+            background: linear-gradient(135deg, var(--accent-purple) 0%, #6b1aa8 100%);
+            color: white;
+            padding: 16px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+        }
+        .leaderboard-table td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border-soft); color: #3a3a42; }
         .leaderboard-table tr:last-child td { border-bottom: none; }
-        .leaderboard-table tr:hover { background-color: #fff0f5; }
+        .leaderboard-table tr:hover { background-color: var(--surface-tint); }
 
         .achievement-icon { font-size: 1.4rem; margin: 0 4px; cursor: help; transition: transform 0.2s; display: inline-block; }
         .achievement-icon:hover { transform: scale(1.3); }
@@ -126,9 +153,9 @@
     </nav>
 
     <header class="rank-header">
-        <h1 style="font-size: 2.5rem; color: var(--text-dark); margin: 0;">🏆 预测大神榜</h1>
+        <h1 style="font-size: 2.5rem; color: var(--text-dark); margin: 0;">🏆 游戏理解榜</h1>
         <p style="color: #666; margin-top: 10px; font-size: 1.1rem;">
-            看看谁才是新皇后街的👑终极预测王👑
+            看看谁是新皇后街的最强游戏理解
         </p>
     </header>
 
@@ -146,7 +173,7 @@
             
             <div id="export-watermark">
                 <h2>新皇后街居委会</h2>
-                <h1>英杰预测王</h1>
+                <h1>游戏理解 s2</h1>
                 <h3 id="export-subtitle">总积分榜</h3>
             </div>
 

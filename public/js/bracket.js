@@ -50,7 +50,10 @@ const state = {
     locked: false,
     submitted: false,
     lockTime: null,
-    serverTimes: {}      // id -> ISO startTime
+    lockMode: 'auto',
+    serverTimes: {},     // id -> ISO startTime
+    picksFull: {},       // customId -> full pick (含 pointsEarned/isPerfect/status)
+    matches: {}          // customId -> { status, teamA, teamB } from /api/matches
 };
 
 function maxScore(format) {
@@ -148,7 +151,7 @@ function fmtUTC(iso) {
         timeZone: tz, month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false
     }).format(d);
-    return `EDT ${fmt('America/New_York')} · CDT ${fmt('America/Chicago')} · PDT ${fmt('America/Los_Angeles')}`;
+    return `北京 ${fmt('Asia/Shanghai')} · 美西 ${fmt('America/Los_Angeles')} · 美东 ${fmt('America/New_York')}`;
 }
 
 function renderCard(def) {
@@ -182,6 +185,36 @@ function renderCard(def) {
     if (p && p.winnerSlot) cardClasses.push('picked');
     if (unresolved) cardClasses.push('unresolved');
     if (lockedByDep) cardClasses.push('locked-by-dep');
+
+    // === 结算后状态 ===
+    const fullPick = state.picksFull[def.id];
+    const actualMatch = state.matches[def.id];
+    const isFinished = actualMatch && actualMatch.status === 'finished';
+    let resultHtml = '';
+    if (fullPick && isFinished) {
+        let cls, label;
+        if (fullPick.status === 'invalid') {
+            cls = 'invalid';
+            label = '⚠️ 队伍未对上 (无效)';
+            cardClasses.push('status-invalid');
+        } else if (fullPick.isPerfect) {
+            cls = 'perfect';
+            label = `🌈 完美预测! +${fullPick.pointsEarned}`;
+            cardClasses.push('status-perfect');
+        } else if (fullPick.pointsEarned > 0) {
+            cls = 'correct';
+            label = `✅ 猜对胜负 +${fullPick.pointsEarned}`;
+            cardClasses.push('status-correct');
+        } else {
+            cls = 'wrong';
+            label = '❌ 猜错 +0';
+            cardClasses.push('status-wrong');
+        }
+        const realScore = `${TEAM_FULL_NAMES[actualMatch.teamA.name] || actualMatch.teamA.name} <span class="real-score">${actualMatch.teamA.score} : ${actualMatch.teamB.score}</span> ${TEAM_FULL_NAMES[actualMatch.teamB.name] || actualMatch.teamB.name}`;
+        resultHtml = `<div class="bc-result ${cls}"><div>${label}</div><div style="font-size:0.78rem; font-weight:500; margin-top:3px; color:#555;">实际: ${realScore}</div></div>`;
+    } else if (isFinished && !fullPick) {
+        // 玩家没提交 bracket, 但比赛已结束 (理论上 picksFull 必有 14 项, 不会进这里)
+    }
 
     const scoreA = p ? p.scoreA : 0;
     const scoreB = p ? p.scoreB : 0;
@@ -222,6 +255,7 @@ function renderCard(def) {
                 onclick="pickWinner('${def.id}','B')">B 赢</button>
         </div>
         ${tzHtml}
+        ${resultHtml}
         <button class="bc-clear"
             ${(state.locked || state.submitted || !p || !p.winnerSlot) ? 'disabled' : ''}
             onclick="clearPick('${def.id}')">取消选择</button>
@@ -281,22 +315,29 @@ async function init() {
     document.getElementById('submit-bar').style.display = 'flex';
 
     try {
-        // 1. 拉取模板 + 锁定信息
-        const [tplRes, myRes] = await Promise.all([
+        // 1. 拉取模板 + 锁定信息 + 实际比赛结果 (用于结算后展示)
+        const [tplRes, myRes, matchesRes] = await Promise.all([
             fetch('/api/bracket/template'),
-            fetch(`/api/bracket/my/${App.user._id}`)
+            fetch(`/api/bracket/my/${App.user._id}`),
+            fetch('/api/matches')
         ]);
         const tpl = await tplRes.json();
         const mine = await myRes.json();
+        const matchesList = await matchesRes.json();
 
         state.locked = !!tpl.locked;
         state.lockTime = tpl.lockTime;
+        state.lockMode = tpl.lockMode || 'auto';
         tpl.matches.forEach(m => { state.serverTimes[m.customId] = m.startTime; });
+        state.matches = {};
+        matchesList.forEach(m => { state.matches[m.customId] = m; });
 
         const banner = document.getElementById('lock-banner');
         if (state.locked) {
             banner.className = 'lock-banner locked';
-            banner.innerText = '🔒 Bracket 已锁定 (M1 已开赛)，仅查看模式';
+            banner.innerText = state.lockMode === 'force-lock'
+                ? '🔒 Bracket 已被管理员锁定，仅查看模式'
+                : '🔒 Bracket 已锁定 (M1 已开赛)，仅查看模式';
         } else {
             const lt = new Date(tpl.lockTime);
             const fmt = (tz) => new Intl.DateTimeFormat('zh-CN', {
@@ -304,7 +345,7 @@ async function init() {
                 hour: '2-digit', minute: '2-digit', hour12: false
             }).format(lt);
             banner.className = 'lock-banner';
-            banner.innerHTML = `⏰ 截止时间: EDT ${fmt('America/New_York')} · CDT ${fmt('America/Chicago')} · PDT ${fmt('America/Los_Angeles')}`;
+            banner.innerHTML = `⏰ 截止时间: 北京 ${fmt('Asia/Shanghai')} · 美西 ${fmt('America/Los_Angeles')} · 美东 ${fmt('America/New_York')}`;
         }
 
         if (mine && mine.picks && mine.picks.length > 0) {
@@ -313,6 +354,7 @@ async function init() {
             for (const pick of mine.picks) {
                 const def = MATCHES_BY_ID[pick.matchCustomId];
                 if (!def) continue;
+                state.picksFull[pick.matchCustomId] = pick;
                 const teamA = resolveTeam(pick.matchCustomId, 'teamA');
                 const teamB = resolveTeam(pick.matchCustomId, 'teamB');
                 // 保留 pick 原始 A/B 顺序: 比较 pick.teamAName 与 def 推导出的 teamA
