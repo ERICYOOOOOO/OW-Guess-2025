@@ -1295,6 +1295,65 @@ footer {
     font-style: italic;
 }
 
+/* 合并的 reward card 占整行 */
+.reward-card-wide {
+    grid-column: 1 / -1;
+}
+
+.rule-card.reward-card-wide h3 {
+    font-size: 1.5rem;
+    text-align: center;
+    background: linear-gradient(90deg, #d4a017, #b8860b, #d4a017);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.reward-card-wide .reward-rank {
+    display: block;
+    text-align: center;
+    margin: 0 auto 8px;
+    width: fit-content;
+}
+
+.reward-card-wide .reward-note {
+    text-align: center;
+}
+
+.reward-winners {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 14px 0 18px;
+}
+
+.reward-winner {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+}
+
+.reward-winner-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.reward-winner-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.reward-card-wide .reward-tags {
+    justify-content: center;
+}
+
 /* --- Rules Footnote --- */
 .rules-footnote {
     text-align: center;
