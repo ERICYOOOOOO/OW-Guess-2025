@@ -1078,6 +1078,40 @@ footer {
     color: #444;
 }
 
+/* === 奖励高亮：赛季战令 / DC title === */
+@keyframes reward-shine {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+@keyframes reward-pulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(255,105,180,0.35), 0 0 12px rgba(218,165,32,0.25); }
+    50%      { box-shadow: 0 0 14px rgba(255,105,180,0.65), 0 0 22px rgba(218,165,32,0.55); }
+}
+.reward-highlight {
+    display: inline-block;
+    font-weight: 900;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background-size: 200% auto;
+    animation: reward-shine 4s linear infinite, reward-pulse 2.4s ease-in-out infinite;
+    transform: translateZ(0);
+    letter-spacing: 0.4px;
+}
+.reward-highlight.reward-pass {
+    /* 赛季战令: 金色渐变 (战令通行证感) */
+    background-image: linear-gradient(90deg, #b8860b, #ffd700, #fff5b8, #ffd700, #b8860b);
+    color: #4a2a00;
+    border: 1px solid #d4a017;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+.reward-highlight.reward-title {
+    /* DC title: 粉紫渐变 (Discord 紫 + 粉) */
+    background-image: linear-gradient(90deg, #5865F2, #ff6cb1, #d8b4fe, #ff6cb1, #5865F2);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+
 /* --- Section Header 通用 --- */
 .section-header {
     text-align: center;
