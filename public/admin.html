@@ -284,7 +284,16 @@
             if(!confirm(`确认 ${sA}:${sB}?`))return;
             await fetch(API+'/settle',{method:'POST',headers,body:JSON.stringify({matchId:id,scoreA:sA,scoreB:sB})}); loadMatches();
         }
-        async function resetMatch(id){ if(confirm('撤销?')) { await fetch(API+'/reset-match',{method:'POST',headers,body:JSON.stringify({matchId:id})}); loadMatches(); } }
+        async function resetMatch(id){
+            if(!confirm('撤销该场结算?\n(若下游比赛已结算将一并级联撤销)')) return;
+            const res = await fetch(API+'/reset-match',{method:'POST',headers,body:JSON.stringify({matchId:id})});
+            const data = await res.json();
+            if (!data.success) { alert('撤销失败: ' + (data.message || '未知错误')); return; }
+            if (data.revoked && data.revoked.length > 1) {
+                alert(`已撤销 ${data.revoked.length} 场比赛:\n${data.revoked.join(' → ')}`);
+            }
+            loadMatches();
+        }
         async function toggleLock(id){ const res=await fetch(API+'/toggle-lock',{method:'POST',headers,body:JSON.stringify({matchId:id})}); if((await res.json()).success) loadMatches(); }
         async function factoryReset(){ if(prompt("输入 DELETE 确认:")==='DELETE'){ await fetch(API+'/factory-reset',{method:'POST',headers,body:JSON.stringify({confirmation:'DELETE'})}); location.reload(); } }
         async function searchUsers(){ const q=document.getElementById('user-search').value; const res=await fetch(API+`/search-users?q=${q}`,{headers}); renderUsers(await res.json()); }

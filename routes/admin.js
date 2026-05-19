@@ -200,10 +200,42 @@ async function settleMatchCore(matchId, scoreA, scoreB) {
     return { winnerName, loserName };
 }
 
-async function resetMatchCore(matchId) {
+// 反向撤销：把当前比赛在下游 (M_next) 占的 slot 清回 TBD。
+// 若下游也已结算，先递归撤销下游 (它会再清自己的下游)，然后再清 slot。
+async function revertDownstream(match, revokedList) {
+    const path = BRACKET_MAP[match.customId];
+    if (!path) return;
+
+    for (const branch of ['win', 'lose']) {
+        const target = path[branch];
+        if (!target) continue;
+
+        const nextMatch = await Match.findOne({ customId: target.to });
+        if (!nextMatch) continue;
+
+        // 下游已结算则先递归撤销 (内部会处理它自己的下游)
+        if (nextMatch.status === 'finished') {
+            await resetMatchCore(nextMatch._id, revokedList);
+        }
+
+        // 重新读 (递归可能改过它),把这场比赛占的 slot 清回 TBD
+        const refreshed = await Match.findOne({ customId: target.to });
+        if (!refreshed) continue;
+        if (target.slot === 'teamA') refreshed.teamA.name = 'TBD';
+        if (target.slot === 'teamB') refreshed.teamB.name = 'TBD';
+        await refreshed.save();
+    }
+}
+
+async function resetMatchCore(matchId, revokedList = []) {
     const match = await Match.findById(matchId);
     if (!match) throw new Error('比赛不存在');
     if (match.status !== 'finished') throw new Error('无效操作: 该场未结算');
+
+    revokedList.push(match.customId);
+
+    // 先递归撤销下游 (含清掉下游里本场占的 slot)
+    await revertDownstream(match, revokedList);
 
     // 回滚实时预测分
     const preds = await Prediction.find({ matchId, status: 'judged' });
@@ -246,10 +278,12 @@ router.post('/settle', requireAdmin, async (req, res) => {
 router.post('/reset-match', requireAdmin, async (req, res) => {
     const { matchId } = req.body;
     try {
-        await resetMatchCore(matchId);
+        const revoked = [];
+        await resetMatchCore(matchId, revoked);
         const match = await Match.findById(matchId);
-        await logAdminAction("ADMIN_RESET", `Match ${match.customId}`, { reason: "Rollback" });
-        res.json({ success: true, message: '比赛已重置' });
+        await logAdminAction("ADMIN_RESET", `Match ${match.customId}`, { reason: "Rollback", cascade: revoked });
+        const cascade = revoked.length > 1 ? ` (级联撤销: ${revoked.join(' → ')})` : '';
+        res.json({ success: true, message: `比赛已重置${cascade}`, revoked });
     } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
