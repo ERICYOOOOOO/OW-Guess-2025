@@ -23,19 +23,21 @@
 
     <header class="hero">
         <div class="hero-content">
-            <h1>新皇后街居委会<br><span style="color:var(--accent-purple)">英 杰 预 测 王</span></h1>
-            <h2 style="font-size:1.1rem; color:#555; margin-top:-5px;">OWCS 2026 · Champions Clash · 东京 Tachikawa Tachihi · 5/22 - 5/24</h2>
+            <div class="hero-eyebrow">OWCS 2026 · STAGE 1 · CHAMPIONS CLASH</div>
+            <h1 class="hero-title">
+                新皇后街居委会<br>
+                <span class="hero-title-accent">英 杰 预 测 王</span>
+            </h1>
+            <div class="hero-meta">
+                <span><i class="far fa-calendar"></i> 5/22 — 5/24</span>
+                <span><i class="fas fa-map-marker-alt"></i> 东京 · 立川 Tachihi</span>
+                <span><i class="fas fa-gamepad"></i> 8 队 · 14 场 · 双败</span>
+            </div>
 
-            <p class="intro-text">
-                Stage 1 国际总决赛一触即发！8 队双败、14 场，从 WBG vs VP 那一刻起就是真刀真枪。
-
-这里是验证你游戏理解的终极竞技场。是成为一眼看穿剧本的🔮先知，还是变成一口毒奶的🌲木子？
-
-两种玩法：
-<b>实时单场</b> — 每场赛前下注，胜负 +1，比分对再加 bonus (FT2 +0.5 / FT3 +1 / FT4 +2)。
-<b>整张 Bracket</b> — 一次性押满 14 场，M1 一开赛就锁死。押对队伍 + 比分一起赚，押错队伍那场 0 分。
-
-合并榜按 max(两种玩法) 排名，能屠的赛道都给你留好了。
+            <p class="hero-lead">
+                Stage 1 国际总决赛，从 <b>WBG vs VP</b> 那一刻起就是真刀真枪。<br>
+                是成为一眼看穿剧本的 🔮 先知，还是变成一口毒奶的 🌲 木子？<br>
+                <b>两种玩法 · 全员开放 · 一起来卷。</b>
             </p>
 
             <div id="hero-leaderboard" class="top3-container">
@@ -50,55 +52,89 @@
         </div>
     </header>
 
+    <section class="modes-section">
+        <div class="section-header">
+            <h2>🎮 两种玩法 · 自由切换</h2>
+            <p>实时单场跟着节奏来，整张 Bracket 一次押满。两榜分开计，综合榜取你更高的那个。</p>
+        </div>
+        <div class="modes-grid">
+            <div class="mode-card mode-realtime">
+                <div class="mode-badge">实时单场</div>
+                <h3>每场赛前下注 · 随时加入</h3>
+                <ul class="mode-bullets">
+                    <li>胜负猜对 <strong>+1 分</strong></li>
+                    <li>比分加分（仅胜负正确时）：FT2 <strong>+0.5</strong> / FT3 <strong>+1</strong> / FT4 <strong>+2</strong></li>
+                    <li>比赛开打即锁单，落子无悔</li>
+                    <li>错过一场也能追下一场，全程开放</li>
+                </ul>
+                <a href="predict.html" class="mode-cta">进入实时预测 →</a>
+            </div>
+            <div class="mode-card mode-bracket">
+                <div class="mode-badge">整张 Bracket</div>
+                <h3>一次押满 14 场 · 一押到底</h3>
+                <ul class="mode-bullets">
+                    <li>M1 ~ M11 + UBF / LBF / GF 全部预测</li>
+                    <li>队伍 + 比分一起押。<strong>押错队伍该场 0 分</strong></li>
+                    <li>计分规则同实时单场（+1 胜负，+ bonus 比分）</li>
+                    <li><b>M1 一开赛即全锁</b>，全程不能改 — 越早提交越占优</li>
+                </ul>
+                <a href="bracket.html" class="mode-cta">提交我的 Bracket →</a>
+            </div>
+        </div>
+    </section>
+
     <section class="rules-container">
-        <h2>📜 竞猜活动细则</h2>
-        
+        <div class="section-header">
+            <h2>📜 活动细则</h2>
+        </div>
+
         <div class="rules-grid">
             <div class="rule-card">
-                <h3><i class="fas fa-sign-in-alt"></i> 1. 参与方式</h3>
-                <p><strong>形式：</strong> 每日赛前填表，预测胜负 + 具体比分。</p>
-                <p><strong>截止：</strong> 比赛开打即锁定，逾期未填视为弃权 (0分)。提交后落子无悔，不可修改。</p>
-                <p><strong>凭证：</strong> 使用“昵称+微信号”登录，作为领奖唯一凭证。</p>
-                <p><strong>群聊：</strong> 请大家一定要加入群聊和DC哦。</p>
-                <p><strong>群主微信号：</strong> twilightwindzero</p>
-                <p><strong>DC链接：</strong> https://discord.gg/pn4zPdpw</p>
+                <h3><i class="fas fa-sign-in-alt"></i> 参与方式</h3>
+                <p><strong>登录：</strong>使用"昵称 + 微信号"登录，作为领奖唯一凭证。</p>
+                <p><strong>提交：</strong>每日赛前预测胜负 + 具体比分。开赛即锁单，逾期未填视为弃权 (0分)，提交后不可修改。</p>
+                <p><strong>群聊：</strong>请大家一定要加入群聊和 DC 哦。</p>
+                <p><strong>群主微信：</strong><code>twilightwindzero</code></p>
+                <p><strong>DC：</strong><a href="https://discord.gg/pn4zPdpw" target="_blank">discord.gg/pn4zPdpw</a></p>
             </div>
 
             <div class="rule-card">
-                <h3><i class="fas fa-calculator"></i> 2. 计分规则</h3>
-                <ul>
-                    <li><strong>胜负：</strong> 猜对 +1分，猜错 0分。</li>
-                    <li><strong>比分加分 (仅胜负正确时)：</strong></li>
-                    <li>FT2 (BO3) 精确比分：<span class="highlight">+0.5分</span></li>
-                    <li>FT3 (BO5) 精确比分：<span class="highlight">+1.0分</span></li>
-                    <li>FT4 (BO7) 精确比分：<span class="highlight">+2.0分</span></li>
-                </ul>
-                <div class="example-box">
-                    <small>例: FT3 实际3:1，你猜3:1得2分；你猜3:2得1分；你猜1:3得0分。</small>
+                <h3><i class="fas fa-trophy"></i> 排名规则</h3>
+                <p><strong>实时榜：</strong>所有实时单场预测的总分。</p>
+                <p><strong>Bracket 榜：</strong>仅 bracket 提交的总分，提交早的优先。</p>
+                <p><strong>综合榜：</strong>取 max(实时, bracket) 排名，并标注来源徽章。</p>
+                <p><strong>平分规则：</strong>有 bracket &gt; 提交早 &gt; 胜负多 &gt; FT4/3/2 比分多。详见排行榜。</p>
+            </div>
+
+            <div class="rule-card rule-card-reward">
+                <div class="reward-rank">
+                    <i class="fas fa-crown"></i> Bracket 第一
                 </div>
+                <h3>🥇 Bracket 之神</h3>
+                <div class="reward-tags">
+                    <span class="reward-tag"><i class="fab fa-discord"></i> DC 专属 Title</span>
+                    <span class="reward-tag"><i class="fas fa-scroll"></i> 下赛季战令</span>
+                </div>
+                <p class="reward-note">Bracket 榜第一名 (多人并列以提交时间早的为准)</p>
             </div>
 
-            <div class="rule-card">
-                <h3><i class="fas fa-sitemap"></i> 3. Bracket 玩法</h3>
-                <p><strong>形式：</strong> 一次性提交 14 场 (M1~M11 + UBF/LBF/GF) 的胜方 + 比分。</p>
-                <p><strong>截止：</strong> <b>M1 一开赛即锁定</b> (2026-05-22 03:00 UTC)，之后不可提交。</p>
-                <p><strong>评分：</strong> 该场实际两队 == 你预测两队，才进入判分；否则该场 0 分。判分规则同实时单场 (+1 胜负，+bonus 比分)。</p>
-                <p><strong>修改：</strong> 选了后面会锁前面，要改前面得先取消所有依赖。</p>
+            <div class="rule-card rule-card-reward">
+                <div class="reward-rank">
+                    <i class="fas fa-crown"></i> 综合榜第一
+                </div>
+                <h3>🏆 英杰预测王</h3>
+                <div class="reward-tags">
+                    <span class="reward-tag"><i class="fab fa-discord"></i> DC 专属 Title</span>
+                    <span class="reward-tag"><i class="fas fa-scroll"></i> 下赛季战令</span>
+                </div>
+                <p class="reward-note">综合榜 (max 两种玩法) 第一名</p>
             </div>
-
-            <div class="rule-card">
-                <h3><i class="fas fa-trophy"></i> 4. 排名与奖励</h3>
-                <p><strong>合并榜：</strong> 取 max(实时, bracket) 排名，并标注来源徽章。</p>
-                <p><strong>Bracket 榜：</strong> 只看 bracket 成绩，提交早的优先。</p>
-                <p><strong>大师预测王：</strong> 合并榜第三，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季战令</span>!</p>
-                <p><strong>宗师预测王：</strong> 合并榜第二，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季高级战令</span>!</p>
-                <p><strong>英杰预测王：</strong> 合并榜第一，可以获得<span class="highlight-glitch">DC专属Title</span>以及<span class="highlight-flow">下赛季终极战令</span>!</p>
-                <p><strong>平分规则：</strong> 详见排行榜 tiebreaker (有 bracket > 提交早 > 胜负多 > FT4/3/2 比分多)。</p>
-                <p><strong>领奖方式：</strong> 请主动联系群主，若不在微信群或 DC，无法联系到将失去获奖资格，最终排名往后延顺。</p>
-                <p style="font-size: 0.9em; color: var(--accent-purple);">*如还遇平分,将平分奖品价值.最终解释权归主办方.</p>
-            </div>
-
         </div>
+
+        <p class="rules-footnote">
+            * 领奖方式：请主动联系群主，若不在微信群或 DC 无法联系到将失去获奖资格，最终排名往后延顺。<br>
+            * 如还遇平分，将平分奖品价值。最终解释权归主办方。
+        </p>
     </section>
 
     <footer>
