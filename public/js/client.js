@@ -92,8 +92,10 @@ async function loadHeroLeaderboard() {
         // 循环里：index 0 是冠军，index 1 是亚军...
         
         top3.forEach((user, index) => {
-            // 默认分数处理
-            const score = user.totalScore || 0;
+            // /api/rankings/total 返回 displayScore = max(realtime, bracket)
+            // 兼容旧字段 (totalScore) 防止历史接口回退
+            const score = (user.displayScore != null ? user.displayScore : (user.totalScore || 0));
+            const source = user.displaySource === 'bracket' ? '🎯' : '🎮';
             const rankClass = `rank-${index + 1}-card`;
             const icon = medals[index];
 
@@ -101,7 +103,7 @@ async function loadHeroLeaderboard() {
                 <div class="top3-card ${rankClass}">
                     <span class="rank-icon">${icon}</span>
                     <div class="top3-name">${user.nickname}</div>
-                    <div class="top3-score">${score}</div>
+                    <div class="top3-score">${score} <span style="font-size:0.65em; opacity:0.7;">${source}</span></div>
                 </div>
             `;
         });
