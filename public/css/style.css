@@ -217,8 +217,11 @@ body {
 
 .rules-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* 响应式布局 */
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
+}
+@media (max-width: 720px) {
+    .rules-grid { grid-template-columns: 1fr; }
 }
 
 .rule-card {
